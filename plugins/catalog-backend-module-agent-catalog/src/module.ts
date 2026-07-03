@@ -29,6 +29,14 @@ export function readAgentCatalogConfig(config: Config): AgentCatalogConfig {
         root.getOptionalNumber('schedule.frequencyMinutes') ?? 5,
       timeoutMinutes: root.getOptionalNumber('schedule.timeoutMinutes') ?? 2,
     },
+    cardEnrichment: {
+      enabled: root.getOptionalBoolean('cardEnrichment.enabled') ?? true,
+      timeoutMs: root.getOptionalNumber('cardEnrichment.timeoutMs') ?? 2000,
+      port: root.getOptionalNumber('cardEnrichment.port') ?? 8080,
+      path:
+        root.getOptionalString('cardEnrichment.path') ??
+        '/.well-known/agent.json',
+    },
     clusters: root.getConfigArray('clusters').map(c => ({
       name: c.getString('name'),
       kubeconfigPath: c.getOptionalString('kubeconfigPath'),

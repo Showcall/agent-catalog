@@ -100,6 +100,69 @@ export interface TransformOptions {
   defaultOwner: string;
 }
 
+/** Where a card came from — drives the `card-source` annotation. */
+export type CardSource = 'live' | 'synthesized' | 'stale';
+
+/**
+ * An A2A agent card. Loosely typed: it may be the real payload fetched from
+ * `/.well-known/agent.json` or a card we synthesize from the CRD.
+ */
+export interface A2ACard {
+  name?: string;
+  description?: string;
+  skills?: unknown[];
+  capabilities?: Record<string, unknown>;
+  preferredTransport?: string;
+  protocolVersion?: string;
+  url?: string;
+  version?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Build the A2A `API` entity for an agent from a card. Shared by the CRD
+ * transform (synthesized card) and the live-card enrichment pass, so the two
+ * can never drift in name/owner/lifecycle. `source` is recorded as an
+ * annotation so the catalog shows whether the card is live or a fallback.
+ */
+export function a2aApiEntity(
+  agent: KagentAgent,
+  opts: TransformOptions,
+  card: A2ACard,
+  source: CardSource,
+): Entity {
+  const ns = agent.metadata?.namespace ?? 'default';
+  const rawName = agent.metadata?.name ?? 'unknown-agent';
+  const apiName = sanitizeName(`${rawName}-a2a-${opts.clusterName}`);
+  return {
+    apiVersion: 'backstage.io/v1alpha1',
+    kind: 'API',
+    metadata: {
+      name: apiName,
+      title: `${rawName} (A2A)`,
+      description: `A2A agent card for ${rawName}`,
+      annotations: {
+        ...locationOf(opts.clusterName, ns, 'AgentA2A', rawName),
+        [`${ANNOTATION_PREFIX}/cluster`]: opts.clusterName,
+        [`${ANNOTATION_PREFIX}/card-source`]: source,
+      },
+      tags: ['a2a'],
+    },
+    spec: {
+      type: A2A_API_TYPE,
+      lifecycle: readyLifecycle(agent),
+      owner: resolveOwner(agent, opts.defaultOwner),
+      definition: JSON.stringify(card, null, 2),
+    },
+  };
+}
+
+/** The A2A API entity name for an agent (deterministic; used by enrichment). */
+export function a2aApiName(agent: KagentAgent, clusterName: string): string {
+  const rawName = agent.metadata?.name ?? 'unknown-agent';
+  return sanitizeName(`${rawName}-a2a-${clusterName}`);
+}
+
 /**
  * Transform one kagent Agent CRD into catalog entities.
  * Returns [Component] or [Component, API] when a2aConfig is present.
@@ -175,37 +238,16 @@ export function kagentAgentToEntities(
 
   if (!hasA2a) return [component];
 
-  // Synthesized card from the CRD. A later enrichment provider can replace
-  // this with the live /.well-known/agent.json payload.
-  const syntheticCard = {
+  // Synthesized card from the CRD. The live-card enrichment pass replaces this
+  // with the real /.well-known/agent.json payload when the agent is reachable.
+  const syntheticCard: A2ACard = {
     name: rawName,
     description: agent.spec?.description ?? '',
     skills: decl.a2aConfig?.skills ?? [],
     source: 'kagent-crd (synthesized; not fetched from .well-known)',
   };
 
-  const api: Entity = {
-    apiVersion: 'backstage.io/v1alpha1',
-    kind: 'API',
-    metadata: {
-      name: apiName,
-      title: `${rawName} (A2A)`,
-      description: `A2A agent card for ${rawName}`,
-      annotations: {
-        ...locationOf(opts.clusterName, ns, 'AgentA2A', rawName),
-        [`${ANNOTATION_PREFIX}/cluster`]: opts.clusterName,
-      },
-      tags: ['a2a'],
-    },
-    spec: {
-      type: A2A_API_TYPE,
-      lifecycle: readyLifecycle(agent),
-      owner,
-      definition: JSON.stringify(syntheticCard, null, 2),
-    },
-  };
-
-  return [component, api];
+  return [component, a2aApiEntity(agent, opts, syntheticCard, 'synthesized')];
 }
 
 /** Transform a ModelConfig CRD into a Resource entity. */

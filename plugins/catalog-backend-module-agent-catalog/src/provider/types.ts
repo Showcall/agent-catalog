@@ -126,6 +126,21 @@ export interface ClusterConfig {
   inCluster?: boolean;
 }
 
+/**
+ * Live A2A-card enrichment: fetch each agent's `/.well-known/agent.json`
+ * through the kube API-server service proxy and overlay it on the entity.
+ * See docs/adr/0001-agent-metadata-sources.md.
+ */
+export interface CardEnrichmentConfig {
+  enabled: boolean;
+  /** Per-fetch timeout; a slow agent must not stall the whole refresh. */
+  timeoutMs: number;
+  /** Service port the agent serves its A2A card on (kagent default 8080). */
+  port: number;
+  /** Card path. */
+  path: string;
+}
+
 export interface AgentCatalogConfig {
   clusters: ClusterConfig[];
   /** Entity ref used when a CRD carries no owner label. */
@@ -135,4 +150,6 @@ export interface AgentCatalogConfig {
   /** Override CRD group/version if your kagent differs. */
   crd: { group: string; version: string };
   schedule: { frequencyMinutes: number; timeoutMinutes: number };
+  /** Live A2A-card enrichment settings. */
+  cardEnrichment: CardEnrichmentConfig;
 }

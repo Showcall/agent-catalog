@@ -7,6 +7,10 @@
  * deleted CRDs disappear from Backstage on the next sync. Simple and
  * self-healing — the right MVP choice over watch streams.
  *
+ * On top of the pure CRD transform it runs a live A2A-card enrichment pass
+ * (docs/adr/0001): each agent's /.well-known/agent.json is fetched through the
+ * kube API-server service proxy and overlaid on its entities, fail-soft.
+ *
  * NOTE on @kubernetes/client-node: the 1.x client uses object-style params
  * (used below). If you're on 0.x, the calls take positional args — see
  * README "Kubernetes client version" section.
@@ -22,7 +26,10 @@ import type { Entity } from '@backstage/catalog-model';
 import {
   kagentAgentToEntities,
   modelConfigToEntity,
+  type A2ACard,
 } from './transforms';
+import { enrichAgentEntities, type CardFetch } from './enrichment';
+import { KubeProxyCardFetcher, type CardFetcher } from './cardFetcher';
 import type {
   AgentCatalogConfig,
   ClusterConfig,
@@ -32,6 +39,11 @@ import type {
 
 export class KagentEntityProvider implements EntityProvider {
   private connection?: EntityProviderConnection;
+  /** Fail-soft cache of last-known cards, keyed by cluster/ns/name. */
+  private readonly cardCache = new Map<
+    string,
+    { card: A2ACard; fetchedAt: number }
+  >();
 
   constructor(
     private readonly config: AgentCatalogConfig,
@@ -81,7 +93,10 @@ export class KagentEntityProvider implements EntityProvider {
     });
   }
 
-  private makeApi(cluster: ClusterConfig): CustomObjectsApi {
+  private makeClients(cluster: ClusterConfig): {
+    custom: CustomObjectsApi;
+    kc: KubeConfig;
+  } {
     const kc = new KubeConfig();
     if (cluster.inCluster) {
       kc.loadFromCluster();
@@ -93,17 +108,44 @@ export class KagentEntityProvider implements EntityProvider {
     if (cluster.context) {
       kc.setCurrentContext(cluster.context);
     }
-    return kc.makeApiClient(CustomObjectsApi);
+    return { custom: kc.makeApiClient(CustomObjectsApi), kc };
+  }
+
+  /** Resolve an agent's card: live fetch, else last-known (stale), else none. */
+  private async resolveCard(
+    fetcher: CardFetcher,
+    clusterName: string,
+    agent: KagentAgent,
+  ): Promise<CardFetch> {
+    const ns = agent.metadata?.namespace ?? 'default';
+    const name = agent.metadata?.name ?? '';
+    const key = `${clusterName}/${ns}/${name}`;
+    const card = name ? await fetcher.fetch(ns, name) : null;
+    if (card) {
+      this.cardCache.set(key, { card, fetchedAt: Date.now() });
+      return { card, source: 'live' };
+    }
+    const cached = this.cardCache.get(key);
+    if (cached) return { card: cached.card, source: 'stale' };
+    return { card: null, source: 'unreachable' };
   }
 
   private async collectCluster(cluster: ClusterConfig): Promise<Entity[]> {
-    const api = this.makeApi(cluster);
+    const { custom: api, kc } = this.makeClients(cluster);
     const { group, version } = this.config.crd;
     const exclude = new Set(this.config.excludeNamespaces ?? []);
     const opts = {
       clusterName: cluster.name,
       defaultOwner: this.config.defaultOwner,
     };
+    const ce = this.config.cardEnrichment;
+    const fetcher: CardFetcher | undefined = ce.enabled
+      ? new KubeProxyCardFetcher(kc, {
+          port: ce.port,
+          path: ce.path,
+          timeoutMs: ce.timeoutMs,
+        })
+      : undefined;
 
     const entities: Entity[] = [];
 
@@ -114,15 +156,45 @@ export class KagentEntityProvider implements EntityProvider {
       plural: 'agents',
     })) as { items?: KagentAgent[] };
 
-    for (const agent of agentList.items ?? []) {
-      if (exclude.has(agent.metadata?.namespace ?? '')) continue;
+    const agents = (agentList.items ?? []).filter(
+      a => !exclude.has(a.metadata?.namespace ?? ''),
+    );
+
+    // Fetch all cards concurrently; each fetch is individually timed out, so
+    // one slow/hung agent can't stall the refresh. (Bounded concurrency is a
+    // future refinement — see the ADR.)
+    const cardResults = fetcher
+      ? await Promise.all(
+          agents.map(a => this.resolveCard(fetcher, cluster.name, a)),
+        )
+      : undefined;
+
+    let live = 0;
+    let stale = 0;
+    let unreachable = 0;
+    agents.forEach((agent, i) => {
       try {
-        entities.push(...kagentAgentToEntities(agent, opts));
+        const base = kagentAgentToEntities(agent, opts);
+        if (cardResults) {
+          const fetched = cardResults[i];
+          if (fetched.source === 'live') live++;
+          else if (fetched.source === 'stale') stale++;
+          else unreachable++;
+          entities.push(...enrichAgentEntities(agent, base, fetched, opts));
+        } else {
+          entities.push(...base);
+        }
       } catch (e) {
         this.logger.warn(
           `agent-catalog: skipping agent ${agent.metadata?.namespace}/${agent.metadata?.name}: ${e}`,
         );
       }
+    });
+
+    if (fetcher) {
+      this.logger.info(
+        `agent-catalog: cards on ${cluster.name} — live=${live} stale=${stale} unreachable=${unreachable}`,
+      );
     }
 
     // --- ModelConfigs ---
