@@ -114,9 +114,10 @@ version, plural)` takes positional args.
 - **Full mutation per refresh**: a cluster that fails to sync drops its
   entities until the next successful pass. Fine for MVP; move to per-cluster
   providers or delta mutations later.
-- **Synthesized A2A card** from the CRD, not fetched from
-  `/.well-known/agent.json`. A live-card enrichment provider is the natural
-  next step (and makes the API entity work for non-kagent runtimes).
+- ~~Synthesized A2A card~~ **Fixed**: the live card is fetched from
+  `/.well-known/agent.json` via the kube API-server proxy and overlaid on
+  every agent, fail-soft ([ADR 0001](docs/adr/0001-agent-metadata-sources.md));
+  the synthesized card remains only as the unreachable-agent fallback.
 - **No frontend plugin yet**: entities render fine on stock catalog pages via
   annotations/tags. The dedicated agent entity page (card viewer, tools
   panel, fleet view) is Phase 2.
