@@ -122,7 +122,6 @@ version, plural)` takes positional args.
 - **Scaffolder PR flow** assumes GitHub; swap the publish action for GitLab
   etc. as needed.
 
-## Legal hygiene
+## License
 
-Clean-room project: personal time, personal equipment, no employer code or
-configs. Apache-2.0.
+Apache-2.0
