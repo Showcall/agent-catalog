@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" role="img" aria-label="agent-catalog — your Backstage catalog knows every AI agent">
+  <defs>
+    <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse">
+      <circle cx="14" cy="14" r="1.2" fill="#161d2c"/>
+    </pattern>
+  </defs>
+
+  <!-- background -->
+  <rect width="1280" height="320" rx="16" fill="#0d1117"/>
+  <rect width="1280" height="320" rx="16" fill="url(#dots)"/>
+
+  <!-- ============ left: wordmark ============ -->
+  <text x="72" y="148" font-family="'SFMono-Regular','Cascadia Code',Menlo,Consolas,monospace" font-size="56" font-weight="700" fill="#e6edf3">agent-catalog</text>
+  <rect x="524" y="108" width="18" height="46" rx="3" fill="#2dd4bf"/>
+
+  <text x="72" y="192" font-family="-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="20" fill="#9aa7b8">Your catalog knows every service.</text>
+  <text x="72" y="220" font-family="-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="20" fill="#9aa7b8">Now it knows every agent too.</text>
+
+  <!-- badges -->
+  <g font-family="'SFMono-Regular',Menlo,Consolas,monospace" font-size="12" fill="#8b98ab">
+    <rect x="72" y="246" width="98" height="24" rx="12" fill="#141b29" stroke="#2a3550"/>
+    <circle cx="88" cy="258" r="3" fill="#2dd4bf"/>
+    <text x="98" y="262">backstage</text>
+
+    <rect x="180" y="246" width="76" height="24" rx="12" fill="#141b29" stroke="#2a3550"/>
+    <circle cx="196" cy="258" r="3" fill="#a78bfa"/>
+    <text x="206" y="262">kagent</text>
+
+    <rect x="266" y="246" width="55" height="24" rx="12" fill="#141b29" stroke="#2a3550"/>
+    <circle cx="282" cy="258" r="3" fill="#f0b429"/>
+    <text x="292" y="262">a2a</text>
+
+    <rect x="331" y="246" width="76" height="24" rx="12" fill="#141b29" stroke="#2a3550"/>
+    <circle cx="347" cy="258" r="3" fill="#3fb950"/>
+    <text x="357" y="262">gitops</text>
+  </g>
+
+  <!-- ============ right: the closed loop ============ -->
+  <text x="812" y="54" font-family="'SFMono-Regular',Menlo,Consolas,monospace" font-size="13" fill="#5b6b84">the closed loop ↻</text>
+  <rect x="800" y="64" width="430" height="212" rx="24" fill="none" stroke="#2a3550" stroke-width="1.6" stroke-dasharray="7 7"/>
+  <!-- circulation arrows on the loop -->
+  <path d="M1009,58 L1009,70 L1023,64 Z" fill="#3b4964"/>
+  <path d="M1021,270 L1021,282 L1007,276 Z" fill="#3b4964"/>
+
+  <!-- ...... robot 1: declarative (teal) ...... -->
+  <g>
+    <rect x="828" y="84" width="88" height="44" rx="8" fill="#141b29" stroke="#2dd4bf" stroke-opacity="0.55"/>
+    <rect x="840" y="94" width="48" height="5" rx="2.5" fill="#2dd4bf"/>
+    <rect x="840" y="106" width="60" height="4" rx="2" fill="#3b4964"/>
+    <rect x="840" y="115" width="40" height="4" rx="2" fill="#3b4964"/>
+    <line x1="872" y1="128" x2="872" y2="148" stroke="#3b4964" stroke-dasharray="2 4"/>
+    <line x1="872" y1="136" x2="872" y2="150" stroke="#3b4964"/>
+    <circle cx="872" cy="136" r="4" fill="#2dd4bf"/>
+    <rect x="840" y="150" width="64" height="56" rx="14" fill="#182135" stroke="#2dd4bf" stroke-opacity="0.7" stroke-width="1.5"/>
+    <circle cx="860" cy="172" r="5" fill="#2dd4bf"/>
+    <circle cx="884" cy="172" r="5" fill="#2dd4bf"/>
+    <rect x="862" y="188" width="20" height="4" rx="2" fill="#46536b"/>
+    <text x="872" y="232" text-anchor="middle" font-family="'SFMono-Regular',Menlo,Consolas,monospace" font-size="11" fill="#7c8ba1">declarative</text>
+  </g>
+
+  <!-- ...... robot 2: byo (violet) ...... -->
+  <g>
+    <rect x="971" y="84" width="88" height="44" rx="8" fill="#141b29" stroke="#a78bfa" stroke-opacity="0.55"/>
+    <rect x="983" y="94" width="48" height="5" rx="2.5" fill="#a78bfa"/>
+    <rect x="983" y="106" width="60" height="4" rx="2" fill="#3b4964"/>
+    <rect x="983" y="115" width="40" height="4" rx="2" fill="#3b4964"/>
+    <line x1="1015" y1="128" x2="1015" y2="148" stroke="#3b4964" stroke-dasharray="2 4"/>
+    <line x1="1015" y1="136" x2="1015" y2="150" stroke="#3b4964"/>
+    <circle cx="1015" cy="136" r="4" fill="#a78bfa"/>
+    <rect x="983" y="150" width="64" height="56" rx="14" fill="#182135" stroke="#a78bfa" stroke-opacity="0.7" stroke-width="1.5"/>
+    <circle cx="1003" cy="172" r="5" fill="#a78bfa"/>
+    <circle cx="1027" cy="172" r="5" fill="#a78bfa"/>
+    <rect x="1005" y="188" width="20" height="4" rx="2" fill="#46536b"/>
+    <text x="1015" y="232" text-anchor="middle" font-family="'SFMono-Regular',Menlo,Consolas,monospace" font-size="11" fill="#7c8ba1">byo</text>
+  </g>
+
+  <!-- ...... robot 3: a2a (amber) ...... -->
+  <g>
+    <rect x="1114" y="84" width="88" height="44" rx="8" fill="#141b29" stroke="#f0b429" stroke-opacity="0.55"/>
+    <rect x="1126" y="94" width="48" height="5" rx="2.5" fill="#f0b429"/>
+    <rect x="1126" y="106" width="60" height="4" rx="2" fill="#3b4964"/>
+    <rect x="1126" y="115" width="40" height="4" rx="2" fill="#3b4964"/>
+    <line x1="1158" y1="128" x2="1158" y2="148" stroke="#3b4964" stroke-dasharray="2 4"/>
+    <line x1="1158" y1="136" x2="1158" y2="150" stroke="#3b4964"/>
+    <circle cx="1158" cy="136" r="4" fill="#f0b429"/>
+    <rect x="1126" y="150" width="64" height="56" rx="14" fill="#182135" stroke="#f0b429" stroke-opacity="0.7" stroke-width="1.5"/>
+    <circle cx="1146" cy="172" r="5" fill="#f0b429"/>
+    <circle cx="1170" cy="172" r="5" fill="#f0b429"/>
+    <rect x="1148" y="188" width="20" height="4" rx="2" fill="#46536b"/>
+    <text x="1158" y="232" text-anchor="middle" font-family="'SFMono-Regular',Menlo,Consolas,monospace" font-size="11" fill="#7c8ba1">a2a</text>
+  </g>
+
+  <!-- status pill -->
+  <rect x="942" y="246" width="146" height="20" rx="10" fill="#12261b" stroke="#1f4d33"/>
+  <circle cx="958" cy="256" r="3.5" fill="#3fb950"/>
+  <text x="968" y="260" font-family="'SFMono-Regular',Menlo,Consolas,monospace" font-size="11" fill="#3fb950">cards: all live</text>
+</svg>

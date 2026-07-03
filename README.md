@@ -1,3 +1,5 @@
+<img src="docs/banner.svg" alt="agent-catalog — your Backstage catalog knows every service. Now it knows every AI agent too." width="100%"/>
+
 # backstage-agent-catalog (MVP)
 
 Your Backstage catalog already knows every service you run. Now it knows every
