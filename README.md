@@ -9,6 +9,15 @@ entities, plus a golden-path scaffolder template that creates new agents via
 GitOps PR — which then appear in the catalog automatically. That closed loop
 is the demo.
 
+## Documentation
+
+New to agents, A2A, or MCP? Start with the primer. Diagrams throughout.
+
+- [concepts.md](docs/concepts.md) — glossary + how each concept maps into Backstage
+- [architecture.md](docs/architecture.md) — the closed loop; why the catalog is never in the deploy path
+- [governance.md](docs/governance.md) — the three kinds of agent sprawl and what this actually solves
+- [docs/adr/](docs/adr/README.md) — every significant decision, with alternatives and consequences
+
 ## Entity model
 
 Targets kagent CRD **v1alpha2** (group `kagent.dev`). In v1alpha2 the
