@@ -9,7 +9,7 @@ how each maps into Backstage. Read this first; everything else assumes it.
 | Term | What it is |
 |---|---|
 | **Agent** | A long-running service whose behavior is driven by an LLM: it receives a task, reasons with a model, optionally calls tools, and returns a result. Operationally it's a pod; conceptually it's *software with judgment*, which is why governance matters more than for a stateless microservice. |
-| **kagent** | A Kubernetes controller ([kagent.dev](https://kagent.dev)) that runs agents as first-class cluster resources. You declare an `Agent` CRD; kagent compiles it into a running deployment. This project reads those CRDs. |
+| **kagent** | A Kubernetes controller ([kagent.dev](https://kagent.dev), by Solo.io) that runs agents as first-class cluster resources. You declare an `Agent` CRD; kagent compiles it into a running deployment. This project is a *consumer* of kagent — it reads those CRDs into the catalog; it is not an alternative to kagent's runtime or UI. |
 | **A2A (Agent-to-Agent)** | An open protocol for agents to discover and call each other, independent of vendor or framework. The interoperability layer of the agent ecosystem. |
 | **Agent card** | An agent's self-description, served at `/.well-known/agent.json`: name, skills, capabilities (e.g. streaming), transport, protocol version. The A2A equivalent of an OpenAPI spec — and the *only* interface truth for agents whose internals are opaque. |
 | **MCP (Model Context Protocol)** | The standard for exposing *tools* to models. An **MCP server** hosts callable tools (query k8s, fetch metrics…); agents reference which servers they may call. In kagent: `RemoteMCPServer` / `MCPServer` CRDs. |

@@ -11,6 +11,16 @@ entities, plus a golden-path scaffolder template that creates new agents via
 GitOps PR — which then appear in the catalog automatically. That closed loop
 is the demo.
 
+## Where this sits (not a kagent alternative)
+
+[kagent](https://kagent.dev) (by Solo.io) is the agent **runtime**: it runs,
+reconciles, and operates agents on Kubernetes, with its own UI for building
+and invoking them. This project is a **consumer** of kagent — a Backstage
+integration that mirrors kagent's agents into the org-wide software catalog,
+alongside the services, APIs, and teams that already live there. It replaces
+nothing and competes with nothing: if kagent is where agents *run*, this is
+where the rest of the org *finds out they exist*.
+
 ## Documentation
 
 New to agents, A2A, or MCP? Start with the primer. Diagrams throughout.
