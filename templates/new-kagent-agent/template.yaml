@@ -1,0 +1,100 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: new-kagent-agent
+  title: New kagent Agent
+  description: >-
+    Golden path: create a declarative kagent agent via GitOps PR. Once merged
+    and applied, the agent appears in the catalog automatically via the
+    agent-catalog entity provider.
+  tags: [ai-agent, kagent, recommended]
+spec:
+  owner: group:default/platform-team
+  type: ai-agent
+
+  parameters:
+    - title: Agent basics
+      required: [name, owner, description]
+      properties:
+        name:
+          title: Agent name
+          type: string
+          pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$'
+          description: Kubernetes-safe name (lowercase, dashes)
+        description:
+          title: What does this agent do?
+          type: string
+        owner:
+          title: Owning team
+          type: string
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter: { kind: Group }
+        namespace:
+          title: Target namespace
+          type: string
+          default: agents
+    - title: Model & tools
+      required: [modelConfig]
+      properties:
+        modelConfig:
+          title: ModelConfig name
+          type: string
+          description: Existing kagent ModelConfig to use (e.g. anthropic-sonnet)
+        toolServers:
+          title: Allowed MCP tool servers
+          type: array
+          items: { type: string }
+          description: ToolServer names this agent may call
+        systemPrompt:
+          title: System prompt
+          type: string
+          ui:widget: textarea
+          ui:options: { rows: 10 }
+    - title: GitOps target
+      required: [repoUrl]
+      properties:
+        repoUrl:
+          title: GitOps repository
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts: [github.com]
+
+  steps:
+    - id: fetch
+      name: Render manifests
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner }}
+          namespace: ${{ parameters.namespace }}
+          modelConfig: ${{ parameters.modelConfig }}
+          toolServers: ${{ parameters.toolServers }}
+          systemPrompt: ${{ parameters.systemPrompt }}
+
+    - id: pr
+      name: Open GitOps pull request
+      action: publish:github:pull-request
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        branchName: add-agent-${{ parameters.name }}
+        title: 'Add kagent agent: ${{ parameters.name }}'
+        description: >-
+          Adds the ${{ parameters.name }} agent (owner: ${{ parameters.owner }}).
+          On merge + sync, the agent-catalog provider will register it in
+          Backstage automatically.
+
+  output:
+    links:
+      - title: Review pull request
+        url: ${{ steps.pr.output.remoteUrl }}
+    text:
+      - title: What happens next
+        content: |
+          1. Merge the PR; Argo/Flux applies the Agent CRD.
+          2. Within one sync cycle (~5 min) the agent appears in the catalog,
+             owned by ${{ parameters.owner }} — no manual registration.

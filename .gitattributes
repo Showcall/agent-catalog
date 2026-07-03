@@ -1,0 +1,8 @@
+# Normalize line endings: store LF in the repo, regardless of a
+# contributor's core.autocrlf setting. Keeps diffs clean across OSes.
+* text=auto eol=lf
+
+# Binary assets should never be line-ending normalized.
+*.png binary
+*.ico binary
+*.svg text eol=lf

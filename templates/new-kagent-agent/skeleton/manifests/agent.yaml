@@ -1,0 +1,24 @@
+apiVersion: kagent.dev/v1alpha2
+kind: Agent
+metadata:
+  name: ${{ values.name }}
+  namespace: ${{ values.namespace }}
+  annotations:
+    # Backstage owner is an entity ref (e.g. group:default/team); it must be
+    # an annotation — ':' and '/' are illegal in Kubernetes label values.
+    backstage.io/owner: ${{ values.owner }}
+spec:
+  type: Declarative
+  description: ${{ values.description }}
+  declarative:
+    modelConfig: ${{ values.modelConfig }}
+    systemMessage: |
+      ${{ values.systemPrompt }}
+    {%- if values.toolServers and values.toolServers.length %}
+    tools:
+    {%- for ts in values.toolServers %}
+      - type: McpServer
+        mcpServer:
+          name: ${{ ts }}
+    {%- endfor %}
+    {%- endif %}
