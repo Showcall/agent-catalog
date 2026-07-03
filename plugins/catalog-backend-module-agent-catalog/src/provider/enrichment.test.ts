@@ -46,7 +46,7 @@ describe('enrichAgentEntities', () => {
     const api = out.find(e => e.kind === 'API')!;
     expect(ann(component, 'card-source')).toBe('live');
     expect(ann(component, 'reachable')).toBe('true');
-    expect(component.spec?.providesApis).toEqual(['triage-a2a-prod-east']);
+    expect(component.spec?.providesApis).toEqual(['triage-a2a-ops-prod-east']);
 
     const card = JSON.parse(String(api.spec?.definition));
     expect(card.protocolVersion).toBe('0.3'); // real card, not the synthesized one
@@ -67,7 +67,9 @@ describe('enrichAgentEntities', () => {
     const component = out.find(e => e.kind === 'Component')!;
     const api = out.find(e => e.kind === 'API')!;
     expect(api).toBeDefined();
-    expect(component.spec?.providesApis).toEqual(['custom-bot-a2a-prod-east']);
+    expect(component.spec?.providesApis).toEqual([
+      'custom-bot-a2a-team-x-prod-east',
+    ]);
     expect(JSON.parse(String(api.spec?.definition)).skills[0].id).toBe('do-thing');
   });
 

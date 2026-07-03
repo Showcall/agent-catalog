@@ -75,29 +75,101 @@ function readyLifecycle(agent: KagentAgent): string {
   return ready ? 'production' : 'experimental';
 }
 
+/** A named, optionally namespace-qualified reference from an Agent spec. */
+export interface NamespacedRef {
+  name: string;
+  /** Undefined = same namespace as the referencing agent (kagent default). */
+  namespace?: string;
+}
+
 /**
- * Names of McpServer/Agent dependencies referenced by an Agent spec.
- * Reads kagent v1alpha2 tool refs (`declarative.tools[].mcpServer.name` /
- * `.agent.name`). The returned `toolServers` are MCP server names.
+ * McpServer/Agent dependencies referenced by an Agent spec, with their
+ * namespaces. Reads kagent v1alpha2 tool refs
+ * (`declarative.tools[].mcpServer.{name,namespace}` / `.agent.{name,namespace}`).
+ * Namespaces matter: two `k8s-tools` servers in different namespaces are
+ * different resources (see docs/adr/0005-entity-naming.md).
  */
 export function extractToolRefs(agent: KagentAgent): {
-  toolServers: string[];
-  agents: string[];
+  toolServers: NamespacedRef[];
+  agents: NamespacedRef[];
 } {
-  const toolServers = new Set<string>();
-  const agents = new Set<string>();
+  const toolServers = new Map<string, NamespacedRef>();
+  const agents = new Map<string, NamespacedRef>();
   for (const tool of agent.spec?.declarative?.tools ?? []) {
-    const ts = tool?.mcpServer?.name;
-    if (typeof ts === 'string' && ts) toolServers.add(ts);
-    const ref = tool?.agent?.name;
-    if (typeof ref === 'string' && ref) agents.add(ref);
+    const ts = tool?.mcpServer;
+    if (typeof ts?.name === 'string' && ts.name) {
+      toolServers.set(`${ts.namespace ?? ''}/${ts.name}`, {
+        name: ts.name,
+        namespace: ts.namespace,
+      });
+    }
+    const ref = tool?.agent;
+    if (typeof ref?.name === 'string' && ref.name) {
+      agents.set(`${ref.namespace ?? ''}/${ref.name}`, {
+        name: ref.name,
+        namespace: ref.namespace,
+      });
+    }
   }
-  return { toolServers: [...toolServers], agents: [...agents] };
+  return { toolServers: [...toolServers.values()], agents: [...agents.values()] };
 }
 
 export interface TransformOptions {
   clusterName: string;
   defaultOwner: string;
+}
+
+/**
+ * Entity name for a cluster-scoped resource: name + k8s namespace + cluster.
+ * The namespace is load-bearing: Kubernetes treats `default/foo` and
+ * `kagent/foo` as distinct resources, so the catalog must too — omitting it
+ * caused silent last-write-wins collisions (docs/adr/0005-entity-naming.md).
+ */
+export function qualifiedEntityName(
+  rawName: string,
+  ns: string,
+  clusterName: string,
+): string {
+  return sanitizeName(`${rawName}-${ns}-${clusterName}`);
+}
+
+/**
+ * Classify an agent as 'byo' or 'declarative'. Prefers the explicit
+ * `spec.type` discriminator, falling back to shape (a `byo` block with no
+ * `declarative`) so we degrade gracefully when the field is omitted.
+ */
+export function agentKind(agent: KagentAgent): 'byo' | 'declarative' {
+  const t = agent.spec?.type?.toLowerCase();
+  if (t === 'byo') return 'byo';
+  if (t === 'declarative') return 'declarative';
+  return agent.spec?.byo && !agent.spec?.declarative ? 'byo' : 'declarative';
+}
+
+/**
+ * Project the parts of a BYO deployment that are safe and useful to catalog:
+ * image provenance, replicas, resource requests, and env variable NAMES.
+ * Env values / valueFrom are deliberately dropped — they are frequently
+ * secrets and must never land in the catalog.
+ */
+export function extractByoDeployment(agent: KagentAgent): {
+  image?: string;
+  replicas?: number;
+  envNames: string[];
+  cpuRequest?: string;
+  memoryRequest?: string;
+} {
+  const d = agent.spec?.byo?.deployment ?? {};
+  const envNames = (d.env ?? [])
+    .map(e => e?.name)
+    .filter((n): n is string => typeof n === 'string' && n.length > 0);
+  const req = d.resources?.requests ?? {};
+  return {
+    image: typeof d.image === 'string' ? d.image : undefined,
+    replicas: typeof d.replicas === 'number' ? d.replicas : undefined,
+    envNames,
+    cpuRequest: req.cpu != null ? String(req.cpu) : undefined,
+    memoryRequest: req.memory != null ? String(req.memory) : undefined,
+  };
 }
 
 /** Where a card came from — drives the `card-source` annotation. */
@@ -133,7 +205,7 @@ export function a2aApiEntity(
 ): Entity {
   const ns = agent.metadata?.namespace ?? 'default';
   const rawName = agent.metadata?.name ?? 'unknown-agent';
-  const apiName = sanitizeName(`${rawName}-a2a-${opts.clusterName}`);
+  const apiName = a2aApiName(agent, opts.clusterName);
   return {
     apiVersion: 'backstage.io/v1alpha1',
     kind: 'API',
@@ -159,46 +231,114 @@ export function a2aApiEntity(
 
 /** The A2A API entity name for an agent (deterministic; used by enrichment). */
 export function a2aApiName(agent: KagentAgent, clusterName: string): string {
+  const ns = agent.metadata?.namespace ?? 'default';
   const rawName = agent.metadata?.name ?? 'unknown-agent';
-  return sanitizeName(`${rawName}-a2a-${clusterName}`);
+  return qualifiedEntityName(`${rawName}-a2a`, ns, clusterName);
+}
+
+/** Build the Component for a BYO agent (the container is opaque to kagent). */
+function byoAgentToComponent(agent: KagentAgent, opts: TransformOptions): Entity {
+  const ns = agent.metadata?.namespace ?? 'default';
+  const rawName = agent.metadata?.name ?? 'unknown-agent';
+  const byo = extractByoDeployment(agent);
+
+  return {
+    apiVersion: 'backstage.io/v1alpha1',
+    kind: 'Component',
+    metadata: {
+      name: qualifiedEntityName(rawName, ns, opts.clusterName),
+      title: rawName,
+      description: agent.spec?.description ?? 'kagent BYO agent',
+      annotations: {
+        ...locationOf(opts.clusterName, ns, 'Agent', rawName),
+        [`${ANNOTATION_PREFIX}/runtime`]: 'kagent',
+        [`${ANNOTATION_PREFIX}/agent-type`]: 'byo',
+        [`${ANNOTATION_PREFIX}/cluster`]: opts.clusterName,
+        [`${ANNOTATION_PREFIX}/namespace`]: ns,
+        ...(byo.image ? { [`${ANNOTATION_PREFIX}/image`]: byo.image } : {}),
+      },
+      tags: ['ai-agent', 'kagent', 'byo'],
+    },
+    spec: {
+      type: AGENT_COMPONENT_TYPE,
+      lifecycle: readyLifecycle(agent),
+      owner: resolveOwner(agent, opts.defaultOwner),
+      // No modelConfig / tools / A2A here: a BYO container is opaque to
+      // kagent. Its interface plane arrives via the live-card enrichment
+      // pass (docs/adr/0001), which adds the API entity when reachable.
+      agent: {
+        runtime: 'kagent',
+        agentType: 'byo',
+        cluster: opts.clusterName,
+        namespace: ns,
+        image: byo.image,
+        replicas: byo.replicas,
+        envNames: byo.envNames,
+        ...(byo.cpuRequest || byo.memoryRequest
+          ? {
+              resources: {
+                cpuRequest: byo.cpuRequest,
+                memoryRequest: byo.memoryRequest,
+              },
+            }
+          : {}),
+      },
+    } as Entity['spec'],
+  };
 }
 
 /**
  * Transform one kagent Agent CRD into catalog entities.
- * Returns [Component] or [Component, API] when a2aConfig is present.
+ * Declarative: [Component] or [Component, API] when a2aConfig is present.
+ * BYO: [Component] — its API entity comes from the live-card enrichment.
  */
 export function kagentAgentToEntities(
   agent: KagentAgent,
   opts: TransformOptions,
 ): Entity[] {
+  if (agentKind(agent) === 'byo') {
+    return [byoAgentToComponent(agent, opts)];
+  }
+
   const ns = agent.metadata?.namespace ?? 'default';
   const rawName = agent.metadata?.name ?? 'unknown-agent';
-  const name = sanitizeName(`${rawName}-${opts.clusterName}`);
+  const name = qualifiedEntityName(rawName, ns, opts.clusterName);
   const owner = resolveOwner(agent, opts.defaultOwner);
   const decl = agent.spec?.declarative ?? {};
   const { toolServers, agents: agentDeps } = extractToolRefs(agent);
 
+  // dependsOn refs: kagent resolves bare references in the agent's own
+  // namespace; a "ns/name" string is explicit. Either way the namespace is
+  // part of the target's identity (docs/adr/0005-entity-naming.md).
   const dependsOn: string[] = [];
   if (decl.modelConfig) {
+    const [mcNs, mcName] = decl.modelConfig.includes('/')
+      ? decl.modelConfig.split('/', 2)
+      : [ns, decl.modelConfig];
     dependsOn.push(
-      `resource:default/${sanitizeName(
-        `${decl.modelConfig}-${opts.clusterName}`,
-      )}`,
+      `resource:default/${qualifiedEntityName(mcName, mcNs, opts.clusterName)}`,
     );
   }
   for (const ts of toolServers) {
     dependsOn.push(
-      `resource:default/${sanitizeName(`${ts}-${opts.clusterName}`)}`,
+      `resource:default/${qualifiedEntityName(
+        ts.name,
+        ts.namespace ?? ns,
+        opts.clusterName,
+      )}`,
     );
   }
   for (const dep of agentDeps) {
     dependsOn.push(
-      `component:default/${sanitizeName(`${dep}-${opts.clusterName}`)}`,
+      `component:default/${qualifiedEntityName(
+        dep.name,
+        dep.namespace ?? ns,
+        opts.clusterName,
+      )}`,
     );
   }
 
   const hasA2a = !!decl.a2aConfig?.skills?.length;
-  const apiName = sanitizeName(`${rawName}-a2a-${opts.clusterName}`);
 
   const component: Entity = {
     apiVersion: 'backstage.io/v1alpha1',
@@ -210,6 +350,7 @@ export function kagentAgentToEntities(
       annotations: {
         ...locationOf(opts.clusterName, ns, 'Agent', rawName),
         [`${ANNOTATION_PREFIX}/runtime`]: 'kagent',
+        [`${ANNOTATION_PREFIX}/agent-type`]: 'declarative',
         [`${ANNOTATION_PREFIX}/cluster`]: opts.clusterName,
         [`${ANNOTATION_PREFIX}/namespace`]: ns,
         ...(decl.modelConfig
@@ -223,14 +364,15 @@ export function kagentAgentToEntities(
       lifecycle: readyLifecycle(agent),
       owner,
       ...(dependsOn.length ? { dependsOn } : {}),
-      ...(hasA2a ? { providesApis: [apiName] } : {}),
+      ...(hasA2a ? { providesApis: [a2aApiName(agent, opts.clusterName)] } : {}),
       // Rich structured payload for the frontend plugin (permissive spec).
       agent: {
         runtime: 'kagent',
+        agentType: 'declarative',
         cluster: opts.clusterName,
         namespace: ns,
         modelConfig: decl.modelConfig,
-        toolServers,
+        toolServers: toolServers.map(t => t.name),
         systemPromptPresent: !!decl.systemMessage,
       },
     } as Entity['spec'],
@@ -261,7 +403,7 @@ export function modelConfigToEntity(
     apiVersion: 'backstage.io/v1alpha1',
     kind: 'Resource',
     metadata: {
-      name: sanitizeName(`${rawName}-${opts.clusterName}`),
+      name: qualifiedEntityName(rawName, ns, opts.clusterName),
       title: rawName,
       description: `Model config: ${mc.spec?.provider ?? '?'} / ${
         mc.spec?.model ?? '?'

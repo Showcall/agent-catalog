@@ -76,12 +76,41 @@ export interface KagentDeclarativeSpec {
   [key: string]: unknown;
 }
 
+/**
+ * BYO ("bring your own") agent config (v1alpha2, `spec.byo`). The CRD carries
+ * only a container/deployment spec — model, tools and capabilities live
+ * *inside* the image and are opaque to kagent. The interface plane surfaces
+ * only via the live A2A card (see docs/adr/0001-agent-metadata-sources.md).
+ */
+export interface KagentByoSpec {
+  deployment?: {
+    image?: string;
+    replicas?: number;
+    /** Container env. We ingest NAMES ONLY — values may be secrets. */
+    env?: Array<{ name?: string; value?: string; valueFrom?: unknown }>;
+    resources?: {
+      requests?: { cpu?: string; memory?: string; [key: string]: unknown };
+      limits?: { cpu?: string; memory?: string; [key: string]: unknown };
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
 export interface KagentAgentSpec {
   description?: string;
   /** "Declarative" | "BYO" */
   type?: string;
   /** Declarative agent config (v1alpha2). */
   declarative?: KagentDeclarativeSpec;
+  /** BYO agent config (v1alpha2). */
+  byo?: KagentByoSpec;
+  /**
+   * Skill packages loaded from images into `/skills` — NOT the A2A card.
+   * Not currently projected into the catalog.
+   */
+  skills?: unknown;
   [key: string]: unknown;
 }
 
