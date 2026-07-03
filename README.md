@@ -29,6 +29,7 @@ New to agents, A2A, or MCP? Start with the primer. Diagrams throughout.
 - [architecture.md](docs/architecture.md) — the closed loop; why the catalog is never in the deploy path
 - [governance.md](docs/governance.md) — the three kinds of agent sprawl and what this actually solves
 - [docs/adr/](docs/adr/README.md) — every significant decision, with alternatives and consequences
+- [roadmap.md](docs/roadmap.md) — the rungs: runtime landscape and what's deliberately out of scope
 
 ## Entity model
 
