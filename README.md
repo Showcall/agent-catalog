@@ -36,12 +36,6 @@ questions for services. This plugin makes it answer them for agents.
 
 ## The demo
 
-<img src="docs/demo.gif" alt="Demo: the AI Agents fleet page, an agent's traction card, and a heuristic shadow-workload finding" width="100%"/>
-
-*The tour: the fleet across all sources → a kagent agent's live traction
-(requests/tokens from the gateway ledger) → a shadow workload nobody
-registered, caught with evidence (`env:ANTHROPIC_API_KEY`).*
-
 1. `kind create cluster` + install [kagent](https://kagent.dev) — any
    existing agents appear in the catalog within one sync cycle, tagged
    `ai-agent`, with owners and model/tool dependencies.
