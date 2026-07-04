@@ -3,26 +3,38 @@
 # backstage-agent-catalog (MVP)
 
 Your Backstage catalog already knows every service you run. Now it knows every
-**AI agent** too.
+**AI agent** too — **whatever runtime it runs on.**
 
-A catalog backend module with two entity providers — one ingests **kagent**
-CRDs (Agents, ModelConfigs) from your clusters, one discovers **any A2A
-agent** on the cluster via an opt-in Service label, whatever framework it's
-built on ([ADR 0006](docs/adr/0006-a2a-label-discovery.md)) — plus a
-golden-path scaffolder template that creates new agents via GitOps PR, which
+Agents enter the catalog three ways, at three depths:
+
+| How agents enter | What the catalog knows | Runtimes |
+|---|---|---|
+| **Supported runtime integration** (CRD provider) | The full governance plane: model + tool dependencies (`dependsOn`), lifecycle from runtime conditions, BYO image provenance, plus a golden-path scaffolder | **kagent** today · ARK, Dapr Agents on the [roadmap](docs/roadmap.md) |
+| **Runtime-agnostic A2A discovery** — one Service label ([ADR 0006](docs/adr/0006-a2a-label-discovery.md)) | Identity, ownership, lifecycle from Service metadata; real skills/capabilities from the live agent card | Anything serving an agent card: ADK, LangGraph, CrewAI, custom containers, … |
+| **Audit sweep** — probe for unlabeled agents ([ADR 0007](docs/adr/0007-audit-sweep.md)) | Same as discovery, marked `discovery: probe` — the shadow-agent hunt | designed, implementation pending |
+
+The depths are deliberate: a runtime the catalog *knows* (kagent, today)
+gets the richest experience — the dependency graph, accurate lifecycle,
+provenance, and the scaffolder's GitOps closed loop. A runtime it merely
+*discovers* still gets governed, but with a visibly thinner declared plane.
+That gap is the incentive, not a bug: **any agent can be cataloged; agents
+on a supported runtime are cataloged best.**
+
+A golden-path scaffolder template creates new agents via GitOps PR, which
 then appear in the catalog automatically. That closed loop is the demo.
 
-## Where this sits (not a kagent alternative)
+## Where this sits (not an agent runtime)
 
-[kagent](https://kagent.dev) (by Solo.io) is the agent **runtime**: it runs,
-reconciles, and operates agents on Kubernetes, with its own UI for building
-and invoking them. This project is a **consumer** of kagent — a Backstage
-integration that mirrors kagent's agents into the org-wide software catalog,
-alongside the services, APIs, and teams that already live there. It replaces
-nothing and competes with nothing: if kagent is where agents *run*, this is
-where the rest of the org *finds out they exist*. The same stance holds for
-every runtime the discovery provider can read ([ADR 0006](docs/adr/0006-a2a-label-discovery.md)):
-each is a *source* we catalog, never a product we compete with.
+Runtimes — [kagent](https://kagent.dev) (Solo.io), ARK, Dapr Agents, the
+hosted platforms — run, reconcile, and operate agents, with their own UIs
+for building and invoking them. **This project runs nothing.** It is a
+consumer of runtimes: a Backstage integration that mirrors their agents
+into the org-wide software catalog, alongside the services, APIs, and teams
+that already live there. It replaces nothing and competes with nothing —
+runtimes are where agents *run*; this is where the rest of the org
+*finds out they exist*. kagent is called out throughout as the first
+fully-supported runtime (deepest integration), not as the boundary of
+the project.
 
 ## Documentation
 

@@ -11,7 +11,7 @@ each new runtime below is a catalog **source**, not a rival.
 | 1 | BYO agents projected from the kagent CRD (image/env-name provenance) | ✅ done |
 | 2 | Live A2A-card enrichment for all agents (kube-proxy fetch, fail-soft) | ✅ done |
 | 3 | Non-kagent discovery: **Tier A (labeled Services) ✅** — [ADR 0006](adr/0006-a2a-label-discovery.md); Tiers B/C below | 🟨 in progress |
-| — | **Audit sweep**: probe unlabeled Services for cards (shadow-agent hunt; the high-value follow-on to Tier A — see [ADR 0006](adr/0006-a2a-label-discovery.md)) | ⬜ next |
+| — | **Audit sweep**: probe unlabeled Services for cards (shadow-agent hunt). Designed in [ADR 0007](adr/0007-audit-sweep.md): entities directly (`discovery: probe`), trigger-first with operator-configured cadence, off by default | ⬜ next (design done) |
 | — | Drift scorecard: declared `a2aConfig` skills vs skills in the served card | ⬜ |
 | — | Usage scorecard: cumulative tokens/requests per agent — below | ⬜ |
 
