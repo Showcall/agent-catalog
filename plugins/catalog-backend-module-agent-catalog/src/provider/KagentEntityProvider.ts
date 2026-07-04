@@ -30,6 +30,7 @@ import {
 } from './transforms';
 import { enrichAgentEntities, type CardFetch } from './enrichment';
 import { KubeProxyCardFetcher, type CardFetcher } from './cardFetcher';
+import type { UsageService } from './UsageService';
 import type {
   AgentCatalogConfig,
   ClusterConfig,
@@ -48,6 +49,8 @@ export class KagentEntityProvider implements EntityProvider {
   constructor(
     private readonly config: AgentCatalogConfig,
     private readonly logger: LoggerService,
+    /** Optional gateway-usage integration (ADR 0008). */
+    private readonly usage?: UsageService,
   ) {}
 
   getProviderName(): string {
@@ -172,24 +175,33 @@ export class KagentEntityProvider implements EntityProvider {
     let live = 0;
     let stale = 0;
     let unreachable = 0;
+    const seenIds: string[] = [];
     agents.forEach((agent, i) => {
       try {
-        const base = kagentAgentToEntities(agent, opts);
+        seenIds.push(
+          `${agent.metadata?.namespace ?? 'default'}/${agent.metadata?.name}`,
+        );
+        let built = kagentAgentToEntities(agent, opts);
         if (cardResults) {
           const fetched = cardResults[i];
           if (fetched.source === 'live') live++;
           else if (fetched.source === 'stale') stale++;
           else unreachable++;
-          entities.push(...enrichAgentEntities(agent, base, fetched, opts));
-        } else {
-          entities.push(...base);
+          built = enrichAgentEntities(agent, built, fetched, opts);
         }
+        // Per-agent traction annotations for alias-matched consumers
+        // (ADR 0008); no-op when usage is disabled or unmatched.
+        entities.push(...built.map(e => this.usage?.decorate(e) ?? e));
       } catch (e) {
         this.logger.warn(
           `agent-catalog: skipping agent ${agent.metadata?.namespace}/${agent.metadata?.name}: ${e}`,
         );
       }
     });
+    this.usage?.reportSeenAgents(
+      `${this.getProviderName()}/${cluster.name}`,
+      seenIds,
+    );
 
     if (fetcher) {
       this.logger.info(

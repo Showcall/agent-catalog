@@ -14,6 +14,8 @@ import { catalogProcessingExtensionPoint } from '@backstage/plugin-catalog-node/
 import type { Config } from '@backstage/config';
 import { KagentEntityProvider } from './provider/KagentEntityProvider';
 import { A2ADiscoveryProvider } from './provider/A2ADiscoveryProvider';
+import { GatewayUsageProvider, UsageService } from './provider/UsageService';
+import { LiteLLMUsageSource } from './provider/litellmUsageSource';
 import type { AgentCatalogConfig } from './provider/types';
 
 export function readAgentCatalogConfig(config: Config): AgentCatalogConfig {
@@ -53,6 +55,19 @@ export function readAgentCatalogConfig(config: Config): AgentCatalogConfig {
           kind: c.getString('kind'),
         })) ?? [{ group: 'kagent.dev', kind: 'Agent' }],
     },
+    usage: {
+      enabled: root.getOptionalBoolean('usage.enabled') ?? false,
+      source: root.getOptionalString('usage.source') ?? 'litellm',
+      baseUrl: root.getOptionalString('usage.baseUrl'),
+      apiKeyEnv:
+        root.getOptionalString('usage.apiKeyEnv') ?? 'LITELLM_SPEND_KEY',
+      windowDays: root.getOptionalNumber('usage.windowDays') ?? 7,
+      includeCost: root.getOptionalBoolean('usage.includeCost') ?? false,
+      schedule: {
+        frequencyMinutes:
+          root.getOptionalNumber('usage.schedule.frequencyMinutes') ?? 60,
+      },
+    },
     clusters: root.getConfigArray('clusters').map(c => ({
       name: c.getString('name'),
       kubeconfigPath: c.getOptionalString('kubeconfigPath'),
@@ -75,7 +90,33 @@ export const catalogModuleAgentCatalog = createBackendModule({
       },
       async init({ catalog, config, logger, scheduler }) {
         const cfg = readAgentCatalogConfig(config);
-        const provider = new KagentEntityProvider(cfg, logger);
+
+        // Gateway-usage integration (ADR 0008): the service holds the
+        // windowed ledger snapshot on its own slow schedule; agent
+        // providers consult it to stamp per-agent traction annotations.
+        let usage: UsageService | undefined;
+        if (cfg.usage.enabled) {
+          const apiKey = process.env[cfg.usage.apiKeyEnv];
+          if (cfg.usage.baseUrl && apiKey) {
+            usage = new UsageService(
+              new LiteLLMUsageSource({
+                baseUrl: cfg.usage.baseUrl,
+                apiKey,
+                windowDays: cfg.usage.windowDays,
+              }),
+              cfg.usage.includeCost,
+              logger,
+            );
+          } else {
+            logger.warn(
+              `gateway-usage: enabled but ${
+                cfg.usage.baseUrl ? `env ${cfg.usage.apiKeyEnv} is unset` : 'baseUrl is missing'
+              } — skipping`,
+            );
+          }
+        }
+
+        const provider = new KagentEntityProvider(cfg, logger, usage);
         catalog.addEntityProvider(provider);
 
         await scheduler.scheduleTask({
@@ -92,7 +133,7 @@ export const catalogModuleAgentCatalog = createBackendModule({
         // provider + locationKey so the two full mutations can't clobber
         // each other.
         if (cfg.a2aDiscovery.enabled) {
-          const discovery = new A2ADiscoveryProvider(cfg, logger);
+          const discovery = new A2ADiscoveryProvider(cfg, logger, usage);
           catalog.addEntityProvider(discovery);
 
           await scheduler.scheduleTask({
@@ -102,6 +143,44 @@ export const catalogModuleAgentCatalog = createBackendModule({
             initialDelay: { seconds: 15 },
             fn: async () => {
               await discovery.refresh();
+            },
+          });
+        }
+
+        if (usage) {
+          const gatewayProvider = new GatewayUsageProvider(
+            usage,
+            cfg.usage.includeCost,
+            // Gateway entity is cluster-independent; use the first cluster
+            // name only for TransformOptions shape.
+            {
+              clusterName: cfg.clusters[0]?.name ?? 'default',
+              defaultOwner: cfg.defaultOwner,
+            },
+            logger,
+          );
+          catalog.addEntityProvider(gatewayProvider);
+
+          // Two tasks, deliberately ordered around the agent providers:
+          // the snapshot lands BEFORE their first refresh (so per-agent
+          // annotations apply from cycle one), the summary Resource lands
+          // AFTER it (so its matched/unattributed split sees their reports).
+          await scheduler.scheduleTask({
+            id: 'agent-catalog-gateway-usage-snapshot',
+            frequency: { minutes: cfg.usage.schedule.frequencyMinutes },
+            timeout: { minutes: cfg.schedule.timeoutMinutes },
+            initialDelay: { seconds: 5 },
+            fn: async () => {
+              await usage!.refresh();
+            },
+          });
+          await scheduler.scheduleTask({
+            id: 'agent-catalog-gateway-usage-resource',
+            frequency: { minutes: cfg.usage.schedule.frequencyMinutes },
+            timeout: { minutes: cfg.schedule.timeoutMinutes },
+            initialDelay: { seconds: 60 },
+            fn: async () => {
+              await gatewayProvider.refresh();
             },
           });
         }

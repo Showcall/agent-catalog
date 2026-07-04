@@ -221,4 +221,25 @@ export interface AgentCatalogConfig {
   cardEnrichment: CardEnrichmentConfig;
   /** Runtime-agnostic labeled-Service discovery (ADR 0006). */
   a2aDiscovery: A2ADiscoveryConfig;
+  /** Traction from the LLM-gateway ledger (ADR 0008). */
+  usage: UsageConfig;
+}
+
+/**
+ * LLM-gateway usage integration (docs/adr/0008-gateway-usage.md).
+ * The catalog reads the gateway's ledger; it is never in the data path.
+ */
+export interface UsageConfig {
+  enabled: boolean;
+  /** Ledger implementation. 'litellm' is the first supported source. */
+  source: string;
+  /** Gateway base URL, e.g. http://litellm.gateway:4000 */
+  baseUrl?: string;
+  /** Env var holding the spend-scoped API key (never config plaintext). */
+  apiKeyEnv: string;
+  /** Rolling window for usage aggregates. */
+  windowDays: number;
+  /** Dollar cost on entities is opt-in (politically sensitive). */
+  includeCost: boolean;
+  schedule: { frequencyMinutes: number };
 }

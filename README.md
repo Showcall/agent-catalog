@@ -72,6 +72,13 @@ too.
      # a2aDiscovery:              # labeled-Service discovery (on by default)
      #   labelSelector: agentcatalog.io/a2a=true
      #   claimedBy: [{ group: kagent.dev, kind: Agent }]
+     # usage:                     # traction from the LLM-gateway ledger (ADR 0008)
+     #   enabled: true
+     #   source: litellm
+     #   baseUrl: http://litellm.gateway:4000
+     #   apiKeyEnv: LITELLM_SPEND_KEY   # spend-scoped key, via env
+     #   windowDays: 7
+     #   includeCost: false
    ```
 4. Register the scaffolder template (catalog locations or the UI):
    `templates/new-kagent-agent/template.yaml`

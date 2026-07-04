@@ -1,7 +1,20 @@
 # 8. Traction from the LLM-gateway ledger (LiteLLM first)
 
-- Status: accepted (design settled 2026-07-04; implementation pending)
+- Status: accepted (implemented 2026-07-04)
 - Date: 2026-07-04
+
+> **Implementation notes** (verified against a live LiteLLM proxy):
+> `/global/spend/report` turned out to be enterprise-gated; the
+> implementation reads the OSS `/user/daily/activity` endpoint instead,
+> whose `breakdown.api_keys` carries `key_alias` + `team_id` — the whole
+> matching ladder in one call (paginated via `has_more`; `/team/list`
+> resolves team aliases, best-effort). Annotations shipped as
+> `usage-requests` / `usage-tokens` / `usage-window` (window as its own
+> annotation rather than baked into names, since it's configurable),
+> plus `last-active`, `usage-source`, and opt-in `usage-cost-usd`.
+> Scheduling is two tasks: the snapshot lands *before* the agent
+> providers' refresh (annotations apply from cycle one), the summary
+> Resource *after* (its matched/unattributed split needs their reports).
 
 ## Context
 

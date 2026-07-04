@@ -35,6 +35,7 @@ import type {
   ClusterConfig,
   DiscoveredService,
 } from './types';
+import type { UsageService } from './UsageService';
 
 export class A2ADiscoveryProvider implements EntityProvider {
   private connection?: EntityProviderConnection;
@@ -47,6 +48,8 @@ export class A2ADiscoveryProvider implements EntityProvider {
   constructor(
     private readonly config: AgentCatalogConfig,
     private readonly logger: LoggerService,
+    /** Optional gateway-usage integration (ADR 0008). */
+    private readonly usage?: UsageService,
   ) {}
 
   getProviderName(): string {
@@ -140,6 +143,7 @@ export class A2ADiscoveryProvider implements EntityProvider {
     );
 
     const entities: Entity[] = [];
+    const seenIds: string[] = [];
     let discovered = 0;
     let claimed = 0;
     let unreachable = 0;
@@ -175,20 +179,25 @@ export class A2ADiscoveryProvider implements EntityProvider {
           unreachable++;
         }
 
-        entities.push(
-          ...enrichAgentEntities(
-            pseudoAgentFor(svc, ready),
-            [component],
-            fetched,
-            opts,
-            DISCOVERY_LOCATION_SCHEME,
-          ),
+        seenIds.push(`${ns}/${name}`);
+        const built = enrichAgentEntities(
+          pseudoAgentFor(svc, ready),
+          [component],
+          fetched,
+          opts,
+          DISCOVERY_LOCATION_SCHEME,
         );
+        // Per-agent traction for alias-matched consumers (ADR 0008).
+        entities.push(...built.map(e => this.usage?.decorate(e) ?? e));
         discovered++;
       } catch (e) {
         this.logger.warn(`a2a-discovery: skipping ${ns}/${name}: ${e}`);
       }
     }
+    this.usage?.reportSeenAgents(
+      `${this.getProviderName()}/${cluster.name}`,
+      seenIds,
+    );
 
     this.logger.info(
       `a2a-discovery: ${cluster.name} — discovered=${discovered} claimed-skipped=${claimed} unreachable=${unreachable}`,

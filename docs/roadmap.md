@@ -45,7 +45,7 @@ rest.
 | 1 | BYO agents projected from the kagent CRD (image/env-name provenance) | ✅ done |
 | 2 | Live A2A-card enrichment for all agents (kube-proxy fetch, fail-soft) | ✅ done |
 | 3 | Non-kagent discovery: **Tier A (labeled Services) ✅** — [ADR 0006](adr/0006-a2a-label-discovery.md); Tiers B/C below | 🟨 in progress |
-| — | **LLM-gateway usage integration** (traction vs. noise + discovery by consumption) — priority 1 above; designed in [ADR 0008](adr/0008-gateway-usage.md) | ⬜ next (design done) |
+| — | **LLM-gateway usage integration** (traction vs. noise + discovery by consumption) — [ADR 0008](adr/0008-gateway-usage.md) | ✅ done |
 | — | **Heuristic discovery** of LLM-consuming workloads (env-name/image heuristics) — priority 2 above | ⬜ |
 | — | **Audit sweep**: probe unlabeled Services for cards. Designed in [ADR 0007](adr/0007-audit-sweep.md): entities directly (`discovery: probe`), trigger-first, off by default. Folds into heuristic discovery as one signal among several | ⬜ (design done) |
 | — | Drift scorecard: declared `a2aConfig` skills vs skills in the served card | ⬜ |
