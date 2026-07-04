@@ -5,11 +5,12 @@
 Your Backstage catalog already knows every service you run. Now it knows every
 **AI agent** too.
 
-This is the MVP skeleton from the project plan: a catalog backend module that
-ingests **kagent** CRDs (Agents, ModelConfigs) from your clusters as Backstage
-entities, plus a golden-path scaffolder template that creates new agents via
-GitOps PR — which then appear in the catalog automatically. That closed loop
-is the demo.
+A catalog backend module with two entity providers — one ingests **kagent**
+CRDs (Agents, ModelConfigs) from your clusters, one discovers **any A2A
+agent** on the cluster via an opt-in Service label, whatever framework it's
+built on ([ADR 0006](docs/adr/0006-a2a-label-discovery.md)) — plus a
+golden-path scaffolder template that creates new agents via GitOps PR, which
+then appear in the catalog automatically. That closed loop is the demo.
 
 ## Where this sits (not a kagent alternative)
 
@@ -19,7 +20,9 @@ and invoking them. This project is a **consumer** of kagent — a Backstage
 integration that mirrors kagent's agents into the org-wide software catalog,
 alongside the services, APIs, and teams that already live there. It replaces
 nothing and competes with nothing: if kagent is where agents *run*, this is
-where the rest of the org *finds out they exist*.
+where the rest of the org *finds out they exist*. The same stance holds for
+every runtime the discovery provider can read ([ADR 0006](docs/adr/0006-a2a-label-discovery.md)):
+each is a *source* we catalog, never a product we compete with.
 
 ## Documentation
 
@@ -41,9 +44,10 @@ refs keyed by `name`. (v1alpha1 had these flat on `spec` with
 | Source | Backstage entity | Notes |
 |---|---|---|
 | kagent `Agent` CRD | `kind: Component`, `spec.type: ai-agent` | owner from `backstage.io/owner` **annotation**, lifecycle from Ready condition |
-| `spec.declarative.a2aConfig` | `kind: API`, `spec.type: a2a` | synthesized card in `spec.definition`; agent `providesApis` it |
+| Live A2A card (`/.well-known/agent-card.json`, fallback `agent.json`) | `kind: API`, `spec.type: a2a` | real card in `spec.definition`; synthesized from `a2aConfig` only as unreachable fallback |
 | kagent `ModelConfig` CRD | `kind: Resource`, `spec.type: llm-model-config` | agents `dependsOn` it |
 | `spec.declarative.tools[].mcpServer` | `dependsOn` relations | governance view: what may this agent call |
+| Any `Service` labeled `agentcatalog.io/a2a=true` | `Component` + `API` from its live card | runtime-agnostic discovery; owner/lifecycle from Service metadata; kagent-owned Services skipped ([ADR 0006](docs/adr/0006-a2a-label-discovery.md)) |
 
 Flat/greppable data lives in `agentcatalog.io/*` annotations; rich structured
 data rides in `spec.agent`. Rationale for Component-over-custom-kind: the
@@ -66,6 +70,15 @@ tooling that makes this valuable.
      excludeNamespaces: [kube-system]
      # crd: { group: kagent.dev, version: v1alpha1 }   # override if needed
      schedule: { frequencyMinutes: 5, timeoutMinutes: 2 }
+     # cardEnrichment:
+     #   enabled: true
+     #   timeoutMs: 2000
+     #   port: 8080
+     #   paths: ['/.well-known/agent-card.json', '/.well-known/agent.json']
+     # a2aDiscovery:               # runtime-agnostic labeled-Service discovery
+     #   enabled: true
+     #   labelSelector: agentcatalog.io/a2a=true
+     #   claimedBy: [{ group: kagent.dev, kind: Agent }]
      clusters:
        - name: local
          # uses default kubeconfig loading; or:
@@ -73,6 +86,10 @@ tooling that makes this valuable.
          # context: kind-kagent-demo
          # inCluster: true   # when Backstage runs in the cluster
    ```
+
+   RBAC: the kubeconfig needs `list` on services, `get` on
+   `services/proxy` (card fetches), and `get` on endpoints — use a
+   least-privilege ServiceAccount, not an admin config.
 4. Register the template (catalog locations or the UI):
    `templates/new-kagent-agent/template.yaml`
 
@@ -114,9 +131,10 @@ version, plural)` takes positional args.
 - **Full mutation per refresh**: a cluster that fails to sync drops its
   entities until the next successful pass. Fine for MVP; move to per-cluster
   providers or delta mutations later.
-- ~~Synthesized A2A card~~ **Fixed**: the live card is fetched from
-  `/.well-known/agent.json` via the kube API-server proxy and overlaid on
-  every agent, fail-soft ([ADR 0001](docs/adr/0001-agent-metadata-sources.md));
+- ~~Synthesized A2A card~~ **Fixed**: the live card is fetched via the kube
+  API-server proxy (`/.well-known/agent-card.json`, falling back to
+  `/.well-known/agent.json`) and overlaid on every agent, fail-soft
+  ([ADR 0001](docs/adr/0001-agent-metadata-sources.md));
   the synthesized card remains only as the unreachable-agent fallback.
 - **No frontend plugin yet**: entities render fine on stock catalog pages via
   annotations/tags. The dedicated agent entity page (card viewer, tools

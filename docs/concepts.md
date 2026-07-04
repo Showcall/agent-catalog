@@ -44,13 +44,15 @@ agents.
 | Source | Backstage entity | Why this kind |
 |---|---|---|
 | kagent `Agent` CRD | `Component`, `spec.type: ai-agent` | Agents are running, owned software — see [ADR 0002](adr/0002-component-not-custom-kind.md) |
+| Any `Service` labeled `agentcatalog.io/a2a=true` | `Component`, `spec.type: ai-agent` | Runtime-agnostic discovery: same kind, thinner declared plane — [ADR 0006](adr/0006-a2a-label-discovery.md) |
 | Live agent card (or declared `a2aConfig` as fallback) | `API`, `spec.type: a2a` | The card *is* the agent's public interface contract |
 | kagent `ModelConfig` | `Resource`, `spec.type: llm-model-config` | Infrastructure the agent depends on |
 | Tool / MCP references | `dependsOn` relations | The governance view: *what may this agent call* |
 
 Flat, greppable facts live in `agentcatalog.io/*` annotations
-(cluster, namespace, model-config, `reachable`, `card-source`); rich
-structured data rides in `spec.agent` for future frontend use.
+(cluster, namespace, model-config, `runtime`, `discovery`, `reachable`,
+`card-source`); rich structured data rides in `spec.agent` for future
+frontend use.
 
 ## Ownership, in one paragraph
 

@@ -13,9 +13,9 @@ flowchart LR
     B -->|opens PR| G[(GitOps repo)]
     H -->|reviews + merges| G
     G -->|auto-sync| A[Argo CD / Flux]
-    A -->|applies Agent CRD| K[Cluster: kagent]
+    A -->|applies manifests| K[Cluster: kagent + any A2A runtime]
     K -->|reconciles pod| P[Running agent]
-    K -.->|poll CRDs| C[Backstage catalog]
+    K -.->|poll CRDs + labeled Services| C[Backstage catalog]
     P -.->|fetch live A2A card| C
     C -->|catalog + scorecards| H
 ```
@@ -32,8 +32,10 @@ deciding the next change — never through a machine waiting on itself.
    nothing. Backstage could go down five seconds after the PR opens and the
    agent would still ship.
 
-2. **Observing (read, continuous).** The entity provider polls the cluster
-   for Agent/ModelConfig CRDs and fetches each agent's live A2A card
+2. **Observing (read, continuous).** Two entity providers poll the cluster —
+   one for kagent Agent/ModelConfig CRDs, one for any Service opted in via
+   the `agentcatalog.io/a2a` label ([ADR 0006](adr/0006-a2a-label-discovery.md)) —
+   and both fetch each agent's live A2A card
    (see [ADR 0001](adr/0001-agent-metadata-sources.md)). This is a
    pull-based mirror of reality. It runs forever, independent of job 1.
 

@@ -10,8 +10,8 @@ each new runtime below is a catalog **source**, not a rival.
 |---|---|---|
 | 1 | BYO agents projected from the kagent CRD (image/env-name provenance) | ✅ done |
 | 2 | Live A2A-card enrichment for all agents (kube-proxy fetch, fail-soft) | ✅ done |
-| 3 | Non-kagent discovery — below | ⬜ next |
-| — | **Audit sweep**: probe unlabeled Services for cards (shadow-agent hunt; the high-value follow-on to Tier A — see [ADR 0006](adr/0006-a2a-label-discovery.md)) | ⬜ |
+| 3 | Non-kagent discovery: **Tier A (labeled Services) ✅** — [ADR 0006](adr/0006-a2a-label-discovery.md); Tiers B/C below | 🟨 in progress |
+| — | **Audit sweep**: probe unlabeled Services for cards (shadow-agent hunt; the high-value follow-on to Tier A — see [ADR 0006](adr/0006-a2a-label-discovery.md)) | ⬜ next |
 | — | Drift scorecard: declared `a2aConfig` skills vs skills in the served card | ⬜ |
 | — | Usage scorecard: cumulative tokens/requests per agent — below | ⬜ |
 
@@ -23,9 +23,9 @@ card is the universal join point** — which is exactly the bet
 [ADR 0001](adr/0001-agent-metadata-sources.md) made. Discovery strategy
 follows from that, in three tiers:
 
-### Tier A — runtime-agnostic A2A discovery on Kubernetes (highest leverage)
+### Tier A — runtime-agnostic A2A discovery on Kubernetes ✅ implemented
 
-> Design: [ADR 0006](adr/0006-a2a-label-discovery.md) (proposed).
+> Design and verdicts: [ADR 0006](adr/0006-a2a-label-discovery.md) (accepted).
 
 One feature that covers every framework at once: discover Services/
 Deployments labeled as agent-card servers (e.g. `agentcatalog.io/a2a: "true"`
@@ -34,10 +34,10 @@ enrichment path. Immediately catalogs self-hosted agents built on ADK,
 LangGraph, CrewAI, LlamaIndex, Semantic Kernel, AutoGen, Strands, the
 OpenAI Agents SDK, or the Claude Agent SDK — no per-framework code.
 
-Prerequisite fix: newer A2A spec versions serve the card at
-`/.well-known/agent-card.json`; kagent serves `/.well-known/agent.json`
-(verified: kagent answers on both). The card fetcher should try both paths
-before declaring an agent unreachable.
+(Done alongside: the card fetcher tries `/.well-known/agent-card.json`
+(A2A v1.0) then `/.well-known/agent.json` (kagent; it answers on both)
+before declaring an agent unreachable, with per-Service annotation
+overrides.)
 
 ### Tier B — additional CRD-based runtimes (same pattern as kagent)
 

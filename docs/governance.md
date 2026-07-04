@@ -10,7 +10,7 @@ third. Conflating them is how governance products overpromise — so we won't.
 |---|---|---|
 | **Version / drift sprawl** | Ten slightly-different copies of an agent because people tweak configs in place | **Largely solved.** One declared spec per environment in git; Argo `selfHeal` reverts out-of-band changes. The cluster is forced to match the repo. |
 | **Count sprawl** | Agent #40 gets merged and nobody remembers #12 | **Converted, not prevented.** Every agent that exists is in the catalog with an owner, model, and tool dependencies. Proliferation becomes a *queryable list you can prune* — see scorecards below. Pruning remains an org discipline. |
-| **Shadow / runtime sprawl** | Agents on laptops, in Lambdas, embedded in apps; sub-agents spawned at runtime | **Not covered.** The catalog sees what its providers cover. Scope = adoption: the org must make this golden path *the* way to ship an agent. Non-kagent discovery is the roadmap's next frontier. |
+| **Shadow / runtime sprawl** | Agents on laptops, in Lambdas, embedded in apps; sub-agents spawned at runtime | **Partially covered.** Any on-cluster agent — whatever framework — is one Service label away from being cataloged ([ADR 0006](adr/0006-a2a-label-discovery.md)), so "we don't run kagent" is no longer an excuse. What remains dark: *unlabeled* on-cluster agents (the audit sweep on the [roadmap](roadmap.md) hunts these), and anything off-cluster or spawned at runtime. |
 
 ## Lifecycle: every transition is a PR
 
@@ -42,6 +42,7 @@ Precision matters here — we verified each of these against a live cluster:
 | `card-source: live` | The API entity's definition is the real served card | — |
 | `card-source: synthesized` | Card built from the CRD's declared `a2aConfig` (agent unreachable; declarative fallback) | The agent actually serves those skills |
 | `card-source: stale` | Serving the last-known card; agent currently unreachable | Current truth |
+| `discovery: crd` \| `label` | Which provider found the agent: a runtime CRD (rich governance plane) or the opt-in Service label (thin plane, no dependsOn). `probe` is reserved for the audit sweep. | That a `label` agent is less real — only that less is *declared* about it |
 
 "Declared but not answering" (`production` + `reachable: false`) is a
 governance finding, not a gap in the catalog.
@@ -59,6 +60,7 @@ payoff of using well-known kinds ([ADR 0002](adr/0002-component-not-custom-kind.
 | **Guessing their interface** | `agentcatalog.io/card-source=synthesized\|stale` — catalog can't confirm what they serve |
 | **Deprecated model** | Resources of type `llm-model-config` whose `agentcatalog.io/model` is on your sunset list; walk `dependsOn` back to affected agents |
 | **Over-privileged** | Agents whose `dependsOn` includes tool servers outside an allowlist |
+| **Discovered but unclaimed** | `agentcatalog.io/discovery=label` with owner still the `defaultOwner` — found, but nobody's name is on it |
 | **Drift (roadmap)** | Declared `a2aConfig` skills ≠ skills in the live card |
 
 ## What genuine hardening adds (beyond this MVP)
