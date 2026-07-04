@@ -50,16 +50,26 @@ overrides.)
 Each becomes its own provider (per [ADR 0003](adr/0003-full-mutation-per-refresh.md),
 per-source providers with distinct locationKeys is the scaling shape anyway).
 
-### Tier C — hosted runtime providers (API-based, not kubeconfig)
+### Tier C — hosted runtimes *and registries* as sources (API-based, not kubeconfig)
 
-| Platform | Notes |
-|---|---|
-| Amazon Bedrock AgentCore Runtime | Speaks A2A natively incl. agent card — Tier A's enrichment logic reuses cleanly. |
-| Azure AI Foundry / Copilot Studio | Copilot Studio A2A GA'd April 2026. |
-| Google Vertex AI Agent Engine / ADK | ADK agents serve cards wherever deployed. |
+| Source | Kind | Notes |
+|---|---|---|
+| Amazon Bedrock AgentCore Runtime | runtime | Speaks A2A natively incl. agent card — Tier A's enrichment logic reuses cleanly. |
+| Azure AI Foundry / Copilot Studio | runtime | Copilot Studio A2A GA'd April 2026. |
+| Google Vertex AI Agent Engine / ADK | runtime | ADK agents serve cards wherever deployed. |
+| AWS Agent Registry | registry | Registered agents (+ their cards) ingested as entities, marked by origin. |
+| Gemini Enterprise agent registrations / ARD | registry | Google's registration surface and discovery spec — same treatment. |
+| A2A-native registries (spec proposal in progress) | registry | When the A2A registry API standardizes, one provider covers all conformant registries. |
 
-These matter for real enterprises (fleets are hybrid), but each needs cloud
-auth + list APIs — bigger lift, after Tiers A/B prove the multi-source model.
+Registries deserve their own row-kind because of what's coming: **one
+registry per cloud is the same fragmentation problem one level up.** The
+org-wide layer that observes *across* runtimes and registries — next to the
+services and teams already in the portal — is precisely the catalog's job
+(see [registries vs. catalogs](concepts.md#registries-vs-catalogs--two-different-questions)).
+Each source needs cloud auth + list APIs — bigger lift, after Tiers A/B
+prove the multi-source model. Registry-sourced entities will carry
+`discovery: registry` so publication claims stay distinguishable from
+observed runtime truth.
 
 ## Usage scorecard: cumulative tokens/requests per agent
 

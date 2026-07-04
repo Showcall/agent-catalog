@@ -42,7 +42,7 @@ Precision matters here — we verified each of these against a live cluster:
 | `card-source: live` | The API entity's definition is the real served card | — |
 | `card-source: synthesized` | Card built from the CRD's declared `a2aConfig` (agent unreachable; declarative fallback) | The agent actually serves those skills |
 | `card-source: stale` | Serving the last-known card; agent currently unreachable | Current truth |
-| `discovery: crd` \| `label` | Which provider found the agent: a runtime CRD (rich governance plane) or the opt-in Service label (thin plane, no dependsOn). `probe` is reserved for the audit sweep. | That a `label` agent is less real — only that less is *declared* about it |
+| `discovery: crd` \| `label` | Which provider found the agent: a runtime CRD (rich governance plane) or the opt-in Service label (thin plane, no dependsOn). `probe` (audit sweep) and `registry` (Tier C registry sources) are reserved — observed truth and publication claims stay distinguishable. | That a `label` agent is less real — only that less is *declared* about it |
 
 "Declared but not answering" (`production` + `reachable: false`) is a
 governance finding, not a gap in the catalog.

@@ -16,6 +16,7 @@ how each maps into Backstage. Read this first; everything else assumes it.
 | **ModelConfig** | kagent CRD binding a provider + model (e.g. Anthropic / claude-sonnet-4-5) plus the secret holding its API key. Agents reference one by name. |
 | **Declarative agent** | `spec.type: Declarative` — model, system prompt, and tool references live *in the CRD*. Fully inspectable from the manifest. |
 | **BYO agent** | `spec.type: BYO` ("bring your own") — the CRD carries only a container spec (image, env, resources). Model, tools, and behavior are baked inside the image, invisible to the cluster. Its live agent card is the only source of its capabilities. |
+| **Agent registry** | A directory where teams *publish* agents so others can find and invoke them (the A2A ecosystem and the major clouds all ship one). Push-model: it contains what was registered. Complementary to — not the same thing as — this catalog; see below. |
 
 ## Declarative vs BYO — why the distinction runs deep
 
@@ -53,6 +54,29 @@ Flat, greppable facts live in `agentcatalog.io/*` annotations
 (cluster, namespace, model-config, `runtime`, `discovery`, `reachable`,
 `card-source`); rich structured data rides in `spec.agent` for future
 frontend use.
+
+## Registries vs. catalogs — two different questions
+
+These get conflated because both are "lists of agents," but they answer
+different questions and fail in different ways:
+
+| | Agent **registry** | This **catalog** |
+|---|---|---|
+| Model | Push — teams *publish* agents | Pull — providers *observe* what runs |
+| Answers | "What agents can I use?" | "What agents exist, who owns them, are they answering?" |
+| Contains | What was registered | What is actually running (and what was found but never registered) |
+| Blind spot | The unregistered agent — invisible *by definition* | The off-cluster agent no provider covers |
+| Primary user | Agent builders and callers | Platform, governance, and security teams |
+
+A registry can't tell you about the agent nobody registered — that's not a
+flaw, it's what a registry *is*. The catalog's audit sweep
+([ADR 0007](adr/0007-audit-sweep.md)) exists precisely for that gap, and
+`reachable: false` is a fact no registry entry carries.
+
+The two compose rather than compete: an org's registries are natural
+**sources** for this catalog ([roadmap](roadmap.md), Tier C) — as
+enterprises accumulate one registry per cloud, the org-wide observation
+layer that reads *across* them is exactly the role a portal catalog plays.
 
 ## Ownership, in one paragraph
 

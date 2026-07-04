@@ -36,6 +36,14 @@ runtimes are where agents *run*; this is where the rest of the org
 fully-supported runtime (deepest integration), not as the boundary of
 the project.
 
+The same goes for **agent registries** (the A2A ecosystem and the major
+clouds each ship one): a registry is where teams *publish* agents for
+others to use; this catalog *observes* what actually runs — including what
+was never registered anywhere. Different question, complementary answer;
+registries are planned catalog **sources**, not rivals
+([registries vs. catalogs](docs/concepts.md#registries-vs-catalogs--two-different-questions),
+[roadmap Tier C](docs/roadmap.md)).
+
 ## Documentation
 
 New to agents, A2A, or MCP? Start with the primer. Diagrams throughout.
