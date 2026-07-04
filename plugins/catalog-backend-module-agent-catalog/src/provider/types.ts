@@ -166,8 +166,46 @@ export interface CardEnrichmentConfig {
   timeoutMs: number;
   /** Service port the agent serves its A2A card on (kagent default 8080). */
   port: number;
-  /** Card path. */
-  path: string;
+  /**
+   * Card paths, tried in order. Default covers both the A2A v1.0 well-known
+   * (`/.well-known/agent-card.json`) and the older path kagent serves
+   * (`/.well-known/agent.json`). See docs/adr/0006-a2a-label-discovery.md.
+   */
+  paths: string[];
+}
+
+/** A runtime CR kind whose Services the discovery provider must skip. */
+export interface ClaimedByRef {
+  group: string;
+  kind: string;
+}
+
+/**
+ * Runtime-agnostic discovery of A2A agents via labeled Services
+ * (docs/adr/0006-a2a-label-discovery.md).
+ */
+export interface A2ADiscoveryConfig {
+  enabled: boolean;
+  /** Label selector marking a Service as an A2A card server. */
+  labelSelector: string;
+  /** Services owned by these runtime CRs are that provider's job — skip. */
+  claimedBy: ClaimedByRef[];
+}
+
+/** Minimal Service shape the discovery provider consumes (defensive). */
+export interface DiscoveredService {
+  metadata?: KubeObjectMeta & {
+    ownerReferences?: Array<{
+      apiVersion?: string;
+      kind?: string;
+      name?: string;
+      [key: string]: unknown;
+    }>;
+  };
+  spec?: {
+    ports?: Array<{ port?: number; name?: string; [key: string]: unknown }>;
+    [key: string]: unknown;
+  };
 }
 
 export interface AgentCatalogConfig {
@@ -181,4 +219,6 @@ export interface AgentCatalogConfig {
   schedule: { frequencyMinutes: number; timeoutMinutes: number };
   /** Live A2A-card enrichment settings. */
   cardEnrichment: CardEnrichmentConfig;
+  /** Runtime-agnostic labeled-Service discovery (ADR 0006). */
+  a2aDiscovery: A2ADiscoveryConfig;
 }

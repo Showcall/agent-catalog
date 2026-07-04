@@ -47,6 +47,7 @@ export function enrichAgentEntities(
   crdEntities: Entity[],
   fetched: CardFetch,
   opts: TransformOptions,
+  locationScheme = 'kagent',
 ): Entity[] {
   const component = crdEntities.find(e => e.kind === 'Component');
   if (!component) return crdEntities; // defensive: nothing to anchor to
@@ -55,7 +56,7 @@ export function enrichAgentEntities(
   const synthesizedApi = crdEntities.find(e => e.kind === 'API');
 
   if (fetched.card) {
-    const api = a2aApiEntity(agent, opts, fetched.card, fetched.source);
+    const api = a2aApiEntity(agent, opts, fetched.card, fetched.source, locationScheme);
     (component.spec as Record<string, unknown>).providesApis = [
       a2aApiName(agent, opts.clusterName),
     ];

@@ -1,6 +1,7 @@
 # 6. Runtime-agnostic agent discovery via labeled Services
 
-- Status: proposed
+- Status: accepted (implemented 2026-07-04) — label opt-in is v1; **probe
+  sweep is the stated endgame** (below)
 - Date: 2026-07-04
 
 ## Context
@@ -82,10 +83,14 @@ agentCatalog:
 
 ## Alternatives considered
 
-- **Probe every Service for a card.** Finds shadow agents without opt-in,
-  but O(cluster) network calls per refresh, trips security tooling, and
-  yields false positives. A deliberate, separately-scoped "audit sweep"
-  mode may do this later — on demand, not per refresh.
+- **Probe every Service for a card.** Deliberately deferred, not rejected —
+  the project's own governance story says the shadow agents nobody labeled
+  are where the real value is. Probing is invasive as a *default* (O(cluster)
+  network calls per refresh, trips security tooling, false positives), so it
+  ships later as a separately-scoped **audit sweep**: on-demand or low-cadence,
+  namespace-allowlisted, results marked `discovery: probe` so labeled and
+  swept agents stay distinguishable. The label remains the steady-state
+  contract; the sweep finds what the contract missed.
 - **Per-runtime adapters first (ARK, Dapr, …).** Each covers one runtime;
   the label covers every framework immediately. Adapters become additive
   enrichment later, exactly as kagent's CRD provider is today (Tier B).

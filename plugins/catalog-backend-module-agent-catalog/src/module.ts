@@ -13,6 +13,7 @@ import {
 import { catalogProcessingExtensionPoint } from '@backstage/plugin-catalog-node/alpha';
 import type { Config } from '@backstage/config';
 import { KagentEntityProvider } from './provider/KagentEntityProvider';
+import { A2ADiscoveryProvider } from './provider/A2ADiscoveryProvider';
 import type { AgentCatalogConfig } from './provider/types';
 
 export function readAgentCatalogConfig(config: Config): AgentCatalogConfig {
@@ -33,9 +34,24 @@ export function readAgentCatalogConfig(config: Config): AgentCatalogConfig {
       enabled: root.getOptionalBoolean('cardEnrichment.enabled') ?? true,
       timeoutMs: root.getOptionalNumber('cardEnrichment.timeoutMs') ?? 2000,
       port: root.getOptionalNumber('cardEnrichment.port') ?? 8080,
-      path:
-        root.getOptionalString('cardEnrichment.path') ??
+      // Fallback chain: A2A v1.0 well-known first, then the older path
+      // kagent serves (kagent answers on both). See ADR 0006.
+      paths: root.getOptionalStringArray('cardEnrichment.paths') ?? [
+        '/.well-known/agent-card.json',
         '/.well-known/agent.json',
+      ],
+    },
+    a2aDiscovery: {
+      enabled: root.getOptionalBoolean('a2aDiscovery.enabled') ?? true,
+      labelSelector:
+        root.getOptionalString('a2aDiscovery.labelSelector') ??
+        'agentcatalog.io/a2a=true',
+      claimedBy: root
+        .getOptionalConfigArray('a2aDiscovery.claimedBy')
+        ?.map(c => ({
+          group: c.getString('group'),
+          kind: c.getString('kind'),
+        })) ?? [{ group: 'kagent.dev', kind: 'Agent' }],
     },
     clusters: root.getConfigArray('clusters').map(c => ({
       name: c.getString('name'),
@@ -71,6 +87,24 @@ export const catalogModuleAgentCatalog = createBackendModule({
             await provider.refresh();
           },
         });
+
+        // Runtime-agnostic labeled-Service discovery (ADR 0006). Separate
+        // provider + locationKey so the two full mutations can't clobber
+        // each other.
+        if (cfg.a2aDiscovery.enabled) {
+          const discovery = new A2ADiscoveryProvider(cfg, logger);
+          catalog.addEntityProvider(discovery);
+
+          await scheduler.scheduleTask({
+            id: 'agent-catalog-a2a-discovery-refresh',
+            frequency: { minutes: cfg.schedule.frequencyMinutes },
+            timeout: { minutes: cfg.schedule.timeoutMinutes },
+            initialDelay: { seconds: 15 },
+            fn: async () => {
+              await discovery.refresh();
+            },
+          });
+        }
       },
     });
   },

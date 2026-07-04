@@ -142,7 +142,7 @@ export class KagentEntityProvider implements EntityProvider {
     const fetcher: CardFetcher | undefined = ce.enabled
       ? new KubeProxyCardFetcher(kc, {
           port: ce.port,
-          path: ce.path,
+          paths: ce.paths,
           timeoutMs: ce.timeoutMs,
         })
       : undefined;

@@ -12,4 +12,4 @@ ADR.
 | [0003](0003-full-mutation-per-refresh.md) | Full catalog mutation per refresh, not deltas | accepted (MVP tradeoff) |
 | [0004](0004-owner-annotation-not-label.md) | Ownership rides in an annotation, not a label | accepted |
 | [0005](0005-entity-naming.md) | Entity names include the k8s namespace (collision fix, catalog + git layer) | accepted |
-| [0006](0006-a2a-label-discovery.md) | Runtime-agnostic agent discovery via labeled Services (rung 3, Tier A) | **proposed** |
+| [0006](0006-a2a-label-discovery.md) | Runtime-agnostic agent discovery via labeled Services (rung 3, Tier A) | accepted |

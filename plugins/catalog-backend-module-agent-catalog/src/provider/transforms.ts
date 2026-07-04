@@ -28,9 +28,15 @@ export function sanitizeName(raw: string): string {
     .slice(0, 63);
 }
 
-function locationOf(cluster: string, ns: string, kind: string, name: string) {
+export function locationOf(
+  cluster: string,
+  ns: string,
+  kind: string,
+  name: string,
+  scheme = 'kagent',
+) {
   // Provider-managed entities must carry managed-by/origin locations.
-  const target = `kagent://${cluster}/${ns}/${kind}/${name}`;
+  const target = `${scheme}://${cluster}/${ns}/${kind}/${name}`;
   return {
     'backstage.io/managed-by-location': target,
     'backstage.io/managed-by-origin-location': target,
@@ -202,6 +208,7 @@ export function a2aApiEntity(
   opts: TransformOptions,
   card: A2ACard,
   source: CardSource,
+  locationScheme = 'kagent',
 ): Entity {
   const ns = agent.metadata?.namespace ?? 'default';
   const rawName = agent.metadata?.name ?? 'unknown-agent';
@@ -214,7 +221,7 @@ export function a2aApiEntity(
       title: `${rawName} (A2A)`,
       description: `A2A agent card for ${rawName}`,
       annotations: {
-        ...locationOf(opts.clusterName, ns, 'AgentA2A', rawName),
+        ...locationOf(opts.clusterName, ns, 'AgentA2A', rawName, locationScheme),
         [`${ANNOTATION_PREFIX}/cluster`]: opts.clusterName,
         [`${ANNOTATION_PREFIX}/card-source`]: source,
       },
@@ -252,6 +259,7 @@ function byoAgentToComponent(agent: KagentAgent, opts: TransformOptions): Entity
       annotations: {
         ...locationOf(opts.clusterName, ns, 'Agent', rawName),
         [`${ANNOTATION_PREFIX}/runtime`]: 'kagent',
+        [`${ANNOTATION_PREFIX}/discovery`]: 'crd',
         [`${ANNOTATION_PREFIX}/agent-type`]: 'byo',
         [`${ANNOTATION_PREFIX}/cluster`]: opts.clusterName,
         [`${ANNOTATION_PREFIX}/namespace`]: ns,
@@ -350,6 +358,7 @@ export function kagentAgentToEntities(
       annotations: {
         ...locationOf(opts.clusterName, ns, 'Agent', rawName),
         [`${ANNOTATION_PREFIX}/runtime`]: 'kagent',
+        [`${ANNOTATION_PREFIX}/discovery`]: 'crd',
         [`${ANNOTATION_PREFIX}/agent-type`]: 'declarative',
         [`${ANNOTATION_PREFIX}/cluster`]: opts.clusterName,
         [`${ANNOTATION_PREFIX}/namespace`]: ns,
