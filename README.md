@@ -30,6 +30,9 @@ questions for services. This plugin makes it answer them for agents.
 - **Governance you can query.** Unowned agents, unreachable agents,
   deprecated models, over-privileged tool access — all standard catalog
   queries ([governance.md](docs/governance.md)).
+- **A fleet view.** The `/agents` page: every agent across all sources with
+  owner, runtime, reachability, and traction in one sortable table — plus an
+  Agent card on each entity page.
 
 ## The demo
 
@@ -158,9 +161,10 @@ New to agents, A2A, or MCP? Start with the primer.
   entities until the next successful pass
   ([ADR 0003](docs/adr/0003-full-mutation-per-refresh.md)); move to
   per-cluster providers at multi-cluster scale.
-- **No frontend plugin yet**: entities render fine on stock catalog pages
-  via annotations/tags. A dedicated agent page (card viewer, tools panel,
-  fleet view) is future work.
+- **Frontend v1 shipped**: an `/agents` fleet page (owner, runtime,
+  discovery, reachable, last-active, requests) and an Agent card on every
+  agent's entity page. Future: card/skill viewer, fleet filters, the
+  gateway Resource page.
 - **Scaffolder PR flow assumes GitHub**; swap the publish action for
   GitLab etc. as needed.
 

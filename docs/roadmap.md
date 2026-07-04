@@ -48,6 +48,7 @@ rest.
 | — | **LLM-gateway usage integration** (traction vs. noise + discovery by consumption) — [ADR 0008](adr/0008-gateway-usage.md) | ✅ done |
 | — | **Heuristic discovery** of LLM-consuming workloads (env-name/image heuristics) — priority 2 above | ⬜ |
 | — | **Audit sweep**: probe unlabeled Services for cards. Designed in [ADR 0007](adr/0007-audit-sweep.md): entities directly (`discovery: probe`), trigger-first, off by default. Folds into heuristic discovery as one signal among several | ⬜ (design done) |
+| — | **Frontend v1**: `/agents` fleet page + Agent entity card (traction, status chips) | ✅ done |
 | — | Drift scorecard: declared `a2aConfig` skills vs skills in the served card | ⬜ |
 | — | Usage scorecard: cumulative tokens/requests per agent — below | ⬜ |
 

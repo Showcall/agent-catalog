@@ -1,0 +1,36 @@
+{
+  "name": "@internal/plugin-agent-catalog",
+  "version": "0.1.0",
+  "description": "Backstage frontend plugin: AI agent fleet view and per-agent traction/status cards",
+  "license": "Apache-2.0",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "backstage": {
+    "role": "frontend-plugin",
+    "pluginId": "agent-catalog"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build": "backstage-cli package build",
+    "lint": "backstage-cli package lint",
+    "test": "backstage-cli package test"
+  },
+  "dependencies": {
+    "@backstage/catalog-model": "^1.9.0",
+    "@backstage/core-components": "^0.18.11",
+    "@backstage/core-plugin-api": "^1.12.7",
+    "@backstage/frontend-plugin-api": "^0.17.2",
+    "@backstage/plugin-catalog-react": "^3.1.0",
+    "@material-ui/core": "^4.12.4",
+    "@material-ui/icons": "^4.11.3"
+  },
+  "peerDependencies": {
+    "react": "^17.0.0 || ^18.0.0"
+  },
+  "devDependencies": {
+    "@backstage/cli": "^0.36.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "files": ["dist"]
+}
