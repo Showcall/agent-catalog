@@ -1,85 +1,53 @@
 <img src="docs/banner.svg" alt="agent-catalog — your Backstage catalog knows every service. Now it knows every AI agent too." width="100%"/>
 
-# backstage-agent-catalog (MVP)
+# backstage-agent-catalog
 
-Your Backstage catalog already knows every service you run. Now it knows every
-**AI agent** too — **whatever runtime it runs on.**
+AI agents are becoming ordinary production workloads — and most
+organizations can't answer the basics about them: *what agents are running,
+who owns each one, which model and tools is it allowed to use, is it
+actually alive?* Your Backstage catalog already answers exactly these
+questions for services. This plugin makes it answer them for agents.
 
-Agents enter the catalog three ways, at three depths:
+## What you get
 
-| How agents enter | What the catalog knows | Runtimes |
-|---|---|---|
-| **Supported runtime integration** (CRD provider) | The full governance plane: model + tool dependencies (`dependsOn`), lifecycle from runtime conditions, BYO image provenance, plus a golden-path scaffolder | **kagent** today · ARK, Dapr Agents on the [roadmap](docs/roadmap.md) |
-| **Runtime-agnostic A2A discovery** — one Service label ([ADR 0006](docs/adr/0006-a2a-label-discovery.md)) | Identity, ownership, lifecycle from Service metadata; real skills/capabilities from the live agent card | Anything serving an agent card: ADK, LangGraph, CrewAI, custom containers, … |
-| **Audit sweep** — probe for unlabeled agents ([ADR 0007](docs/adr/0007-audit-sweep.md)) | Same as discovery, marked `discovery: probe` — the shadow-agent hunt | designed, implementation pending |
+- **Agents as catalog citizens.** Every agent becomes a `Component`
+  (`spec.type: ai-agent`) with an owner, a lifecycle derived from what's
+  actually running, and dependency edges to its model config and the tool
+  servers it may call.
+- **The live agent card, not a guess.** Each agent's A2A card is fetched
+  from the running agent and cataloged as an `API` entity — the catalog
+  shows what an agent *actually serves*, and flags the ones that stop
+  answering.
+- **Any runtime.** kagent agents get the deepest integration (full
+  dependency graph, BYO image provenance). Any other agent — LangGraph,
+  ADK, CrewAI, a hand-rolled container — is one Service label away from
+  being cataloged.
+- **A golden path.** The scaffolder template turns "I want a new agent"
+  into a GitOps PR; once merged and deployed, the agent appears in the
+  catalog on its own. No registration step exists to forget.
+- **Governance you can query.** Unowned agents, unreachable agents,
+  deprecated models, over-privileged tool access — all standard catalog
+  queries ([governance.md](docs/governance.md)).
 
-The depths are deliberate: a runtime the catalog *knows* (kagent, today)
-gets the richest experience — the dependency graph, accurate lifecycle,
-provenance, and the scaffolder's GitOps closed loop. A runtime it merely
-*discovers* still gets governed, but with a visibly thinner declared plane.
-That gap is the incentive, not a bug: **any agent can be cataloged; agents
-on a supported runtime are cataloged best.**
+## The demo
 
-A golden-path scaffolder template creates new agents via GitOps PR, which
-then appear in the catalog automatically. That closed loop is the demo.
+1. `kind create cluster` + install [kagent](https://kagent.dev) — any
+   existing agents appear in the catalog within one sync cycle, tagged
+   `ai-agent`, with owners and model/tool dependencies.
+2. Run the **New kagent Agent** template → it opens a GitOps PR.
+3. Merge. Argo CD applies the manifest; the agent starts.
+4. Next sync, the new agent is in the catalog — owned, discoverable,
+   card fetched live. Nobody registered anything.
 
-## Where this sits (not an agent runtime)
+The same loop works without kagent: deploy any container that serves an
+A2A card, label its Service `agentcatalog.io/a2a: "true"`, and it shows up
+too.
 
-Runtimes — [kagent](https://kagent.dev) (Solo.io), ARK, Dapr Agents, the
-hosted platforms — run, reconcile, and operate agents, with their own UIs
-for building and invoking them. **This project runs nothing.** It is a
-consumer of runtimes: a Backstage integration that mirrors their agents
-into the org-wide software catalog, alongside the services, APIs, and teams
-that already live there. It replaces nothing and competes with nothing —
-runtimes are where agents *run*; this is where the rest of the org
-*finds out they exist*. kagent is called out throughout as the first
-fully-supported runtime (deepest integration), not as the boundary of
-the project.
-
-The same goes for **agent registries** (the A2A ecosystem and the major
-clouds each ship one): a registry is where teams *publish* agents for
-others to use; this catalog *observes* what actually runs — including what
-was never registered anywhere. Different question, complementary answer;
-registries are planned catalog **sources**, not rivals
-([registries vs. catalogs](docs/concepts.md#registries-vs-catalogs--two-different-questions),
-[roadmap Tier C](docs/roadmap.md)).
-
-## Documentation
-
-New to agents, A2A, or MCP? Start with the primer. Diagrams throughout.
-
-- [concepts.md](docs/concepts.md) — glossary + how each concept maps into Backstage
-- [architecture.md](docs/architecture.md) — the closed loop; why the catalog is never in the deploy path
-- [governance.md](docs/governance.md) — the three kinds of agent sprawl and what this actually solves
-- [docs/adr/](docs/adr/README.md) — every significant decision, with alternatives and consequences
-- [roadmap.md](docs/roadmap.md) — the rungs: runtime landscape and what's deliberately out of scope
-
-## Entity model
-
-Targets kagent CRD **v1alpha2** (group `kagent.dev`). In v1alpha2 the
-declarative config lives under `spec.declarative.*`; tool refs are object
-refs keyed by `name`. (v1alpha1 had these flat on `spec` with
-`mcpServer.toolServer`/`agent.ref` — see git history if you need it.)
-
-| Source | Backstage entity | Notes |
-|---|---|---|
-| kagent `Agent` CRD | `kind: Component`, `spec.type: ai-agent` | owner from `backstage.io/owner` **annotation**, lifecycle from Ready condition |
-| Live A2A card (`/.well-known/agent-card.json`, fallback `agent.json`) | `kind: API`, `spec.type: a2a` | real card in `spec.definition`; synthesized from `a2aConfig` only as unreachable fallback |
-| kagent `ModelConfig` CRD | `kind: Resource`, `spec.type: llm-model-config` | agents `dependsOn` it |
-| `spec.declarative.tools[].mcpServer` | `dependsOn` relations | governance view: what may this agent call |
-| Any `Service` labeled `agentcatalog.io/a2a=true` | `Component` + `API` from its live card | runtime-agnostic discovery; owner/lifecycle from Service metadata; kagent-owned Services skipped ([ADR 0006](docs/adr/0006-a2a-label-discovery.md)) |
-
-Flat/greppable data lives in `agentcatalog.io/*` annotations; rich structured
-data rides in `spec.agent`. Rationale for Component-over-custom-kind: the
-entire plugin ecosystem (scorecards, search, ownership, orphan reports) keys
-off well-known kinds — a custom kind opts out of exactly the governance
-tooling that makes this valuable.
-
-## Install (into an existing Backstage app)
+## Quick start (into an existing Backstage app)
 
 1. Copy `plugins/catalog-backend-module-agent-catalog` into your repo's
    `plugins/` and add it to the workspace.
-2. Wire it in `packages/backend/src/index.ts`:
+2. Wire it into `packages/backend/src/index.ts`:
    ```ts
    backend.add(import('@internal/catalog-backend-module-agent-catalog'));
    ```
@@ -88,79 +56,104 @@ tooling that makes this valuable.
    agentCatalog:
      defaultOwner: group:default/platform-team
      excludeNamespaces: [kube-system]
-     # crd: { group: kagent.dev, version: v1alpha1 }   # override if needed
      schedule: { frequencyMinutes: 5, timeoutMinutes: 2 }
-     # cardEnrichment:
-     #   enabled: true
-     #   timeoutMs: 2000
-     #   port: 8080
-     #   paths: ['/.well-known/agent-card.json', '/.well-known/agent.json']
-     # a2aDiscovery:               # runtime-agnostic labeled-Service discovery
-     #   enabled: true
-     #   labelSelector: agentcatalog.io/a2a=true
-     #   claimedBy: [{ group: kagent.dev, kind: Agent }]
      clusters:
        - name: local
          # uses default kubeconfig loading; or:
          # kubeconfigPath: /home/you/.kube/config
          # context: kind-kagent-demo
          # inCluster: true   # when Backstage runs in the cluster
+     # cardEnrichment:            # live A2A-card fetching (on by default)
+     #   timeoutMs: 2000
+     #   port: 8080
+     #   paths: ['/.well-known/agent-card.json', '/.well-known/agent.json']
+     # a2aDiscovery:              # labeled-Service discovery (on by default)
+     #   labelSelector: agentcatalog.io/a2a=true
+     #   claimedBy: [{ group: kagent.dev, kind: Agent }]
    ```
-
-   RBAC: the kubeconfig needs `list` on services, `get` on
-   `services/proxy` (card fetches), and `get` on endpoints — use a
-   least-privilege ServiceAccount, not an admin config.
-4. Register the template (catalog locations or the UI):
+4. Register the scaffolder template (catalog locations or the UI):
    `templates/new-kagent-agent/template.yaml`
 
-## Verify before trusting (10 minutes, do this first)
+**RBAC:** the kubeconfig needs `list` on services, `get` on
+`services/proxy` (card fetches), and `get` on endpoints. Use a
+least-privilege ServiceAccount, not an admin config.
 
-The transforms are written against kagent's documented CRD shapes, but kagent
-is a young project — **verify against your cluster** and adjust
-`src/provider/types.ts` / `transforms.ts` if fields moved:
+### Before you trust it (10 minutes)
+
+The transforms target kagent CRD **v1alpha2** (group `kagent.dev`), but
+kagent is a young project — verify the shapes against *your* cluster and
+adjust `src/provider/types.ts` / `transforms.ts` if fields moved:
 
 ```bash
 kubectl get crd agents.kagent.dev -o jsonpath='{.spec.group} {.spec.versions[*].name}'
 kubectl get agents.kagent.dev -A -o yaml | head -80
-kubectl get modelconfigs.kagent.dev -A -o yaml | head -40
 ```
 
-Check specifically (v1alpha2): `spec.declarative.modelConfig` (string),
+Check specifically: `spec.declarative.modelConfig` (string),
 `spec.declarative.tools[].mcpServer.name`, `spec.declarative.a2aConfig.skills`,
-and the Ready condition type. Note kagent's CRD uses conversion strategy
-`None`, so a cluster whose storage version is v1alpha2 will silently prune
-any flat v1alpha1 fields you write — always author manifests in the storage
-version. The unit tests in `transforms.test.ts` use fixtures — update the
-fixtures to match your real CRDs and keep the tests honest.
+and the Ready condition type. kagent's CRD uses conversion strategy `None`,
+so always author manifests in the storage version — a v1alpha2 cluster
+silently prunes flat v1alpha1 fields. The unit tests use fixtures; update
+them to match your real CRDs and keep them honest.
 
-**Kubernetes client version:** code targets `@kubernetes/client-node` 1.x
-(object-style params). On 0.x, `listCustomObjectForAllNamespaces(group,
-version, plural)` takes positional args.
+Code targets `@kubernetes/client-node` 1.x (object-style params); on 0.x
+the list calls take positional args.
 
-## The demo loop (the whole pitch, ~3 min screen recording)
+## Entity model
 
-1. `kind create cluster && helm install kagent ...` (kagent quick start)
-2. Run Backstage with this module → existing agents appear in the catalog,
-   tagged `ai-agent`, with owners and model/tool dependencies.
-3. Run the **New kagent Agent** template → GitOps PR → merge → apply.
-4. Within one sync cycle the new agent appears in the catalog on its own.
-   No manual registration. That moment is the product.
+| Source | Backstage entity | Notes |
+|---|---|---|
+| kagent `Agent` CRD | `Component`, `spec.type: ai-agent` | owner from `backstage.io/owner` **annotation**, lifecycle from Ready condition |
+| Live A2A card (`/.well-known/agent-card.json`, fallback `agent.json`) | `API`, `spec.type: a2a` | the real served card; synthesized from the CRD only as unreachable fallback |
+| kagent `ModelConfig` CRD | `Resource`, `spec.type: llm-model-config` | agents `dependsOn` it |
+| Tool / MCP references | `dependsOn` relations | the governance view: what may this agent call |
+| Any `Service` labeled `agentcatalog.io/a2a=true` | `Component` + `API` from its live card | runtime-agnostic; owner/lifecycle from Service metadata; runtime-owned Services skipped |
 
-## Known MVP tradeoffs (deliberate)
+Agents are Components rather than a custom kind on purpose: the entire
+plugin ecosystem — scorecards, search, ownership, orphan reports — keys off
+the well-known kinds ([ADR 0002](docs/adr/0002-component-not-custom-kind.md)).
+Flat, greppable facts live in `agentcatalog.io/*` annotations; rich
+structured data rides in `spec.agent`.
+
+## Where this sits
+
+**Not an agent runtime.** Runtimes — [kagent](https://kagent.dev)
+(Solo.io), ARK, Dapr Agents, the hosted platforms — run, reconcile, and
+operate agents. This project runs nothing: it's the org-wide catalog view
+across all of them, next to the services, APIs, and teams already in your
+portal. kagent is the first fully-supported runtime (deepest integration),
+not the boundary of the project.
+
+**Not an agent registry either.** A registry is where teams *publish*
+agents for others to use; this catalog *observes* what actually runs —
+including what was never registered anywhere. Registries are planned
+catalog sources, not rivals
+([registries vs. catalogs](docs/concepts.md#registries-vs-catalogs--two-different-questions)).
+
+## Documentation
+
+New to agents, A2A, or MCP? Start with the primer.
+
+- [concepts.md](docs/concepts.md) — glossary + how each concept maps into Backstage
+- [architecture.md](docs/architecture.md) — the closed loop; why the catalog is never in the deploy path
+- [governance.md](docs/governance.md) — the three kinds of agent sprawl and what this actually solves
+- [roadmap.md](docs/roadmap.md) — supported runtimes, discovery tiers, what's deliberately out of scope
+- [docs/adr/](docs/adr/README.md) — significant decisions recorded as
+  Architecture Decision Records, the same practice
+  [Backstage itself follows](https://backstage.io/docs/architecture-decisions/):
+  each one states the context, the alternatives, and the consequences.
+
+## Current limitations (deliberate)
 
 - **Full mutation per refresh**: a cluster that fails to sync drops its
-  entities until the next successful pass. Fine for MVP; move to per-cluster
-  providers or delta mutations later.
-- ~~Synthesized A2A card~~ **Fixed**: the live card is fetched via the kube
-  API-server proxy (`/.well-known/agent-card.json`, falling back to
-  `/.well-known/agent.json`) and overlaid on every agent, fail-soft
-  ([ADR 0001](docs/adr/0001-agent-metadata-sources.md));
-  the synthesized card remains only as the unreachable-agent fallback.
-- **No frontend plugin yet**: entities render fine on stock catalog pages via
-  annotations/tags. The dedicated agent entity page (card viewer, tools
-  panel, fleet view) is Phase 2.
-- **Scaffolder PR flow** assumes GitHub; swap the publish action for GitLab
-  etc. as needed.
+  entities until the next successful pass
+  ([ADR 0003](docs/adr/0003-full-mutation-per-refresh.md)); move to
+  per-cluster providers at multi-cluster scale.
+- **No frontend plugin yet**: entities render fine on stock catalog pages
+  via annotations/tags. A dedicated agent page (card viewer, tools panel,
+  fleet view) is future work.
+- **Scaffolder PR flow assumes GitHub**; swap the publish action for
+  GitLab etc. as needed.
 
 ## License
 
