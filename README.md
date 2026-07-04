@@ -2,6 +2,8 @@
 
 # backstage-agent-catalog
 
+> *It's 10 PM. Do you know where your agents are?*
+
 AI agents are becoming ordinary production workloads — and most
 organizations can't answer the basics about them: *what agents are running,
 who owns each one, which model and tools is it allowed to use, is it
