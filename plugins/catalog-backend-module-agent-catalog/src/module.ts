@@ -14,6 +14,11 @@ import { catalogProcessingExtensionPoint } from '@backstage/plugin-catalog-node/
 import type { Config } from '@backstage/config';
 import { KagentEntityProvider } from './provider/KagentEntityProvider';
 import { A2ADiscoveryProvider } from './provider/A2ADiscoveryProvider';
+import { HeuristicDiscoveryProvider } from './provider/HeuristicDiscoveryProvider';
+import {
+  DEFAULT_ENV_NAME_PATTERNS,
+  DEFAULT_IMAGE_PATTERNS,
+} from './provider/heuristics';
 import { GatewayUsageProvider, UsageService } from './provider/UsageService';
 import { LiteLLMUsageSource } from './provider/litellmUsageSource';
 import type { AgentCatalogConfig } from './provider/types';
@@ -54,6 +59,15 @@ export function readAgentCatalogConfig(config: Config): AgentCatalogConfig {
           group: c.getString('group'),
           kind: c.getString('kind'),
         })) ?? [{ group: 'kagent.dev', kind: 'Agent' }],
+    },
+    heuristics: {
+      enabled: root.getOptionalBoolean('heuristics.enabled') ?? true,
+      envNamePatterns:
+        root.getOptionalStringArray('heuristics.envNamePatterns') ??
+        DEFAULT_ENV_NAME_PATTERNS,
+      imagePatterns:
+        root.getOptionalStringArray('heuristics.imagePatterns') ??
+        DEFAULT_IMAGE_PATTERNS,
     },
     usage: {
       enabled: root.getOptionalBoolean('usage.enabled') ?? false,
@@ -143,6 +157,21 @@ export const catalogModuleAgentCatalog = createBackendModule({
             initialDelay: { seconds: 15 },
             fn: async () => {
               await discovery.refresh();
+            },
+          });
+        }
+
+        if (cfg.heuristics.enabled) {
+          const heuristics = new HeuristicDiscoveryProvider(cfg, logger, usage);
+          catalog.addEntityProvider(heuristics);
+
+          await scheduler.scheduleTask({
+            id: 'agent-catalog-heuristics-refresh',
+            frequency: { minutes: cfg.schedule.frequencyMinutes },
+            timeout: { minutes: cfg.schedule.timeoutMinutes },
+            initialDelay: { seconds: 20 },
+            fn: async () => {
+              await heuristics.refresh();
             },
           });
         }

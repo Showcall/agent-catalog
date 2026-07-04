@@ -38,9 +38,14 @@ export const AgentInfoCard = () => {
   const runtime = ann[`${A}/runtime`];
   const modelConfig = ann[`${A}/model-config`];
   const image = ann[`${A}/image`];
+  const signals = ann[`${A}/heuristic-signals`];
+  const isHeuristic = discovery === 'heuristic';
 
   return (
-    <InfoCard title="Agent" subheader={`runtime: ${runtime ?? 'unknown'}`}>
+    <InfoCard
+      title={isHeuristic ? 'LLM workload (heuristic finding)' : 'Agent'}
+      subheader={isHeuristic ? undefined : `runtime: ${runtime ?? 'unknown'}`}
+    >
       <Grid container spacing={2}>
         <Grid item xs={12}>
           {discovery && <Chip size="small" variant="outlined" label={`discovery: ${discovery}`} />}
@@ -61,6 +66,15 @@ export const AgentInfoCard = () => {
         <Stat label="Last active" value={lastActive ?? '—'} />
         {cost && <Stat label={`Cost / ${window}`} value={`$${cost}`} />}
 
+        {signals && (
+          <Grid item xs={12}>
+            <Typography variant="body2" color="textSecondary">
+              Flagged because: <code>{signals}</code>. If this is a real
+              agent, label its Service <code>agentcatalog.io/a2a: "true"</code>;
+              if it's a false positive, label it <code>"false"</code>.
+            </Typography>
+          </Grid>
+        )}
         {(modelConfig || image) && (
           <Grid item xs={12}>
             <Typography variant="body2" color="textSecondary">

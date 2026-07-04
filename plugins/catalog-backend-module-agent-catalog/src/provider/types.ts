@@ -223,6 +223,44 @@ export interface AgentCatalogConfig {
   a2aDiscovery: A2ADiscoveryConfig;
   /** Traction from the LLM-gateway ledger (ADR 0008). */
   usage: UsageConfig;
+  /** Heuristic discovery of LLM-consuming workloads (ADR 0009). */
+  heuristics: HeuristicsConfig;
+}
+
+/**
+ * Heuristic discovery (ADR 0009): flag Deployments whose pod specs
+ * advertise LLM consumption. Patterns are regex strings (config-extensible).
+ */
+export interface HeuristicsConfig {
+  enabled: boolean;
+  envNamePatterns: string[];
+  imagePatterns: string[];
+}
+
+/** Minimal Deployment shape the heuristic provider consumes (defensive). */
+export interface DiscoveredWorkload {
+  metadata?: KubeObjectMeta & {
+    ownerReferences?: Array<{
+      apiVersion?: string;
+      kind?: string;
+      name?: string;
+      [key: string]: unknown;
+    }>;
+  };
+  spec?: {
+    template?: {
+      metadata?: { labels?: Record<string, string> };
+      spec?: {
+        containers?: Array<{
+          name?: string;
+          image?: string;
+          env?: Array<{ name?: string; value?: string; valueFrom?: unknown }>;
+        }>;
+      };
+    };
+    [key: string]: unknown;
+  };
+  status?: { readyReplicas?: number; [key: string]: unknown };
 }
 
 /**

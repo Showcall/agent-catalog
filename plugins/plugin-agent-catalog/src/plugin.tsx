@@ -29,7 +29,9 @@ const agentInfoCard = EntityCardBlueprint.make({
   params: {
     filter: (entity: Entity) =>
       entity.kind === 'Component' &&
-      (entity.spec as { type?: string })?.type === 'ai-agent',
+      ['ai-agent', 'llm-workload'].includes(
+        (entity.spec as { type?: string })?.type ?? '',
+      ),
     loader: () =>
       import('./components/AgentInfoCard').then(m => <m.AgentInfoCard />),
   },
