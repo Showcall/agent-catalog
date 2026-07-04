@@ -4,6 +4,40 @@ Where this is going, and why in this order. Positioning holds at every rung:
 we are a *consumer* of agent runtimes, never a competitor to any of them —
 each new runtime below is a catalog **source**, not a rival.
 
+## Current priorities (dogfood-first)
+
+Ordered against the reference adopter scenario — an org with an established
+Backstage, agents mostly on Kubernetes plus some hosted platforms, adoption
+happening in *vastly different ways*, and an **LLM gateway/proxy** already
+in the call path. The platform questions, in priority order: what is
+deployed → who deployed it → on what runtime → **what has traction vs.
+what is noise**.
+
+1. **LLM-gateway usage integration.** The gateway's ledger has
+   per-consumer requests/tokens/cost — traction data for every agent
+   *regardless of runtime or protocol*. Join it onto entities
+   (`last-active`, request/token counts) and, in reverse, surface gateway
+   consumers matching no catalog entity: **discovery by consumption** —
+   the gateway sees what the cluster can't (including off-cluster and
+   local agents, as unattributed usage).
+2. **Heuristic discovery of LLM-consuming workloads.** Much of real-world
+   agent adoption speaks no A2A and has no CRD — a script in a cron job, a
+   FastAPI app calling a provider. Detect by pod-spec heuristics
+   (provider-key-shaped env *names*, framework image patterns). Catches
+   the protocol-less chaos; card probing ([ADR 0007](adr/0007-audit-sweep.md))
+   becomes one heuristic among several.
+3. **Namespace→team ownership fallback.** Backstage already holds the org
+   graph; map namespaces to owning Groups so "who deployed it" doesn't
+   wait on annotation adoption (extends the [ADR 0004](adr/0004-owner-annotation-not-label.md)
+   ladder).
+4. **Tier C** (hosted platforms + registries as sources) — after the
+   on-cluster story is complete.
+
+Out of scope, permanently: *observing* local/laptop agents. A catalog
+cannot see them and shouldn't pretend to — their metabolism shows up as
+unattributed gateway usage (priority 1), and key-issuance policy does the
+rest.
+
 ## The ladder
 
 | Rung | Scope | Status |
@@ -11,7 +45,9 @@ each new runtime below is a catalog **source**, not a rival.
 | 1 | BYO agents projected from the kagent CRD (image/env-name provenance) | ✅ done |
 | 2 | Live A2A-card enrichment for all agents (kube-proxy fetch, fail-soft) | ✅ done |
 | 3 | Non-kagent discovery: **Tier A (labeled Services) ✅** — [ADR 0006](adr/0006-a2a-label-discovery.md); Tiers B/C below | 🟨 in progress |
-| — | **Audit sweep**: probe unlabeled Services for cards (shadow-agent hunt). Designed in [ADR 0007](adr/0007-audit-sweep.md): entities directly (`discovery: probe`), trigger-first with operator-configured cadence, off by default | ⬜ next (design done) |
+| — | **LLM-gateway usage integration** (traction vs. noise + discovery by consumption) — priority 1 above | ⬜ next |
+| — | **Heuristic discovery** of LLM-consuming workloads (env-name/image heuristics) — priority 2 above | ⬜ |
+| — | **Audit sweep**: probe unlabeled Services for cards. Designed in [ADR 0007](adr/0007-audit-sweep.md): entities directly (`discovery: probe`), trigger-first, off by default. Folds into heuristic discovery as one signal among several | ⬜ (design done) |
 | — | Drift scorecard: declared `a2aConfig` skills vs skills in the served card | ⬜ |
 | — | Usage scorecard: cumulative tokens/requests per agent — below | ⬜ |
 
