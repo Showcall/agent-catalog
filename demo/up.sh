@@ -4,6 +4,8 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEMO_DIR="$ROOT_DIR/demo"
 NAMESPACE="agent-catalog-demo"
+# Local port for the mock ledger; 4400 avoids colliding with a real LiteLLM on 4000.
+LITELLM_PORT="${DEMO_LITELLM_PORT:-4400}"
 PID_FILE="$DEMO_DIR/.mock-litellm-port-forward.pid"
 LOG_FILE="$DEMO_DIR/.mock-litellm-port-forward.log"
 
@@ -35,8 +37,8 @@ if [[ -f "$PID_FILE" ]]; then
 fi
 
 if [[ ! -f "$PID_FILE" ]]; then
-  echo "Starting mock LiteLLM port-forward on http://localhost:4000 ..."
-  kubectl -n "$NAMESPACE" port-forward svc/mock-litellm 4000:4000 >"$LOG_FILE" 2>&1 &
+  echo "Starting mock LiteLLM port-forward on http://localhost:${LITELLM_PORT} ..."
+  kubectl -n "$NAMESPACE" port-forward svc/mock-litellm "${LITELLM_PORT}:4000" >"$LOG_FILE" 2>&1 &
   echo "$!" >"$PID_FILE"
   sleep 2
 fi
@@ -50,6 +52,9 @@ Backstage demo config:
 
 Environment:
   export LITELLM_SPEND_KEY=demo-token
+
+Mock ledger: http://localhost:${LITELLM_PORT}
+(If you changed DEMO_LITELLM_PORT, update usage.baseUrl in the demo config.)
 
 Expected findings after the catalog refreshes:
   - release-notes-agent: labeled A2A agent with a live card and usage

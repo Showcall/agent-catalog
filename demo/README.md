@@ -26,7 +26,8 @@ From the `agent-catalog` repo root:
 
 The script applies `demo/manifests/demo.yaml`, waits for the three demo
 Deployments, and starts a port-forward for the mock LiteLLM ledger at
-`http://localhost:4000`.
+`http://localhost:4400` (override with `DEMO_LITELLM_PORT`; 4400 avoids
+colliding with a real LiteLLM proxy on 4000).
 
 ## Configure Backstage
 

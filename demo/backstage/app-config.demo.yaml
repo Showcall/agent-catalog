@@ -33,7 +33,7 @@ agentCatalog:
   usage:
     enabled: true
     source: litellm
-    baseUrl: http://localhost:4000
+    baseUrl: http://localhost:4400  # match DEMO_LITELLM_PORT if overridden
     apiKeyEnv: LITELLM_SPEND_KEY
     windowDays: 7
     includeCost: false
