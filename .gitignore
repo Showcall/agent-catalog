@@ -43,6 +43,7 @@ yarn-error.log*
 *.local.md
 AGENTS.local.md
 docs/superpowers/
+outputs/
 
 # Editor / OS
 .DS_Store
