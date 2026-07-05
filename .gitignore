@@ -28,6 +28,7 @@ coverage/
 # Logs
 *.log
 *.pid
+demo/.ark-installed-by-demo
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

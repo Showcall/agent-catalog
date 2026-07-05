@@ -1,0 +1,16 @@
+apiVersion: ark.mckinsey.com/v1alpha1
+kind: Model
+metadata:
+  name: agent-catalog-webhook-probe
+  namespace: agent-catalog-demo
+spec:
+  provider: openai
+  type: completions
+  model:
+    value: agent-catalog-demo-model
+  config:
+    openai:
+      apiKey:
+        value: demo-token
+      baseUrl:
+        value: http://mock-litellm.agent-catalog-demo.svc.cluster.local:4000/v1

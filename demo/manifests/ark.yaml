@@ -1,0 +1,60 @@
+apiVersion: ark.mckinsey.com/v1alpha1
+kind: Model
+metadata:
+  name: agent-catalog-demo-model
+  namespace: agent-catalog-demo
+  annotations:
+    backstage.io/owner: group:default/platform-team
+spec:
+  provider: openai
+  type: completions
+  model:
+    value: agent-catalog-demo-model
+  config:
+    openai:
+      apiKey:
+        value: demo-token
+      baseUrl:
+        value: http://mock-litellm.agent-catalog-demo.svc.cluster.local:4000/v1
+---
+apiVersion: ark.mckinsey.com/v1alpha1
+kind: Agent
+metadata:
+  name: researcher
+  namespace: agent-catalog-demo
+  annotations:
+    backstage.io/owner: group:default/platform-team
+spec:
+  description: Researches a topic and produces a summary (ARK sample).
+  modelRef:
+    name: agent-catalog-demo-model
+  prompt: You research topics thoroughly and summarize findings.
+---
+apiVersion: ark.mckinsey.com/v1alpha1
+kind: Agent
+metadata:
+  name: writer
+  namespace: agent-catalog-demo
+  annotations:
+    backstage.io/owner: group:default/platform-team
+spec:
+  description: Writes long-form content from research notes (ARK sample).
+  modelRef:
+    name: agent-catalog-demo-model
+  prompt: You write clear, structured articles.
+---
+apiVersion: ark.mckinsey.com/v1alpha1
+kind: Team
+metadata:
+  name: content-team
+  namespace: agent-catalog-demo
+  annotations:
+    backstage.io/owner: group:default/platform-team
+spec:
+  description: Research-then-write pipeline (ARK sample).
+  strategy: sequential
+  members:
+    - name: researcher
+      type: agent
+    - name: writer
+      type: agent

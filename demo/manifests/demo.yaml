@@ -132,6 +132,23 @@ data:
   mock-litellm.js: |
     const http = require('node:http');
     const port = Number(process.env.PORT || 4000);
+    const chatCompletion = {
+      id: 'chatcmpl-agent-catalog-demo',
+      object: 'chat.completion',
+      created: 1783123200,
+      model: 'agent-catalog-demo-model',
+      choices: [
+        {
+          index: 0,
+          message: {
+            role: 'assistant',
+            content: 'Demo response from the local Agent Catalog mock provider.',
+          },
+          finish_reason: 'stop',
+        },
+      ],
+      usage: { prompt_tokens: 12, completion_tokens: 9, total_tokens: 21 },
+    };
     const dailyActivity = {
       results: [
         {
@@ -167,6 +184,19 @@ data:
         return;
       }
       const url = new URL(req.url, `http://${req.headers.host}`);
+      if (url.pathname === '/v1/models' || url.pathname === '/models') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({
+          object: 'list',
+          data: [{ id: 'agent-catalog-demo-model', object: 'model', owned_by: 'agent-catalog-demo' }],
+        }, null, 2));
+        return;
+      }
+      if (url.pathname === '/v1/chat/completions' || url.pathname === '/chat/completions') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify(chatCompletion, null, 2));
+        return;
+      }
       if (url.pathname === '/user/daily/activity') {
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end(JSON.stringify(dailyActivity, null, 2));
