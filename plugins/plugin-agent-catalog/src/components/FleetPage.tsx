@@ -106,8 +106,11 @@ export const FleetPage = () => {
   useEffect(() => {
     catalogApi
       .getEntities({
-        // ai-agent plus honest heuristic findings (ADR 0009)
-        filter: { kind: 'Component', 'spec.type': ['ai-agent', 'llm-workload'] },
+        // agents + multi-agent teams + honest heuristic findings
+        filter: {
+          kind: 'Component',
+          'spec.type': ['ai-agent', 'ai-agent-team', 'llm-workload'],
+        },
       })
       .then(res => setRows(res.items.map(toRow)))
       .catch(setError);

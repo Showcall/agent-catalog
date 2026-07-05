@@ -13,6 +13,7 @@ import {
 import { catalogProcessingExtensionPoint } from '@backstage/plugin-catalog-node/alpha';
 import type { Config } from '@backstage/config';
 import { KagentEntityProvider } from './provider/KagentEntityProvider';
+import { ArkEntityProvider } from './provider/ArkEntityProvider';
 import { A2ADiscoveryProvider } from './provider/A2ADiscoveryProvider';
 import { HeuristicDiscoveryProvider } from './provider/HeuristicDiscoveryProvider';
 import {
@@ -58,7 +59,15 @@ export function readAgentCatalogConfig(config: Config): AgentCatalogConfig {
         ?.map(c => ({
           group: c.getString('group'),
           kind: c.getString('kind'),
-        })) ?? [{ group: 'kagent.dev', kind: 'Agent' }],
+        })) ?? [
+        { group: 'kagent.dev', kind: 'Agent' },
+        { group: 'ark.mckinsey.com', kind: 'Agent' },
+      ],
+    },
+    ark: {
+      enabled: root.getOptionalBoolean('ark.enabled') ?? true,
+      group: root.getOptionalString('ark.group') ?? 'ark.mckinsey.com',
+      version: root.getOptionalString('ark.version') ?? 'v1alpha1',
     },
     heuristics: {
       enabled: root.getOptionalBoolean('heuristics.enabled') ?? true,
@@ -146,6 +155,21 @@ export const catalogModuleAgentCatalog = createBackendModule({
         // Runtime-agnostic labeled-Service discovery (ADR 0006). Separate
         // provider + locationKey so the two full mutations can't clobber
         // each other.
+        if (cfg.ark.enabled) {
+          const ark = new ArkEntityProvider(cfg, logger, usage);
+          catalog.addEntityProvider(ark);
+
+          await scheduler.scheduleTask({
+            id: 'agent-catalog-ark-refresh',
+            frequency: { minutes: cfg.schedule.frequencyMinutes },
+            timeout: { minutes: cfg.schedule.timeoutMinutes },
+            initialDelay: { seconds: 12 },
+            fn: async () => {
+              await ark.refresh();
+            },
+          });
+        }
+
         if (cfg.a2aDiscovery.enabled) {
           const discovery = new A2ADiscoveryProvider(cfg, logger, usage);
           catalog.addEntityProvider(discovery);

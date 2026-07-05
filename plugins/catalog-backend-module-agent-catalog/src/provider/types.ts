@@ -225,6 +225,50 @@ export interface AgentCatalogConfig {
   usage: UsageConfig;
   /** Heuristic discovery of LLM-consuming workloads (ADR 0009). */
   heuristics: HeuristicsConfig;
+  /** ARK runtime ingestion (ADR 0010, Tier B). */
+  ark: ArkConfig;
+}
+
+/** ARK (ark.mckinsey.com) ingestion. Enabled by default; a cluster without
+ * the CRDs is treated as "no ARK here", not an error. */
+export interface ArkConfig {
+  enabled: boolean;
+  group: string;
+  version: string;
+}
+
+/** Partial, defensive typings for ARK CRDs — verify against your cluster. */
+export interface ArkAgent {
+  metadata?: KubeObjectMeta;
+  spec?: {
+    description?: string;
+    prompt?: string;
+    modelRef?: { name?: string; namespace?: string; [key: string]: unknown };
+    tools?: Array<{ name?: string; type?: string; [key: string]: unknown }>;
+    [key: string]: unknown;
+  };
+  status?: KagentAgentStatus;
+}
+
+export interface ArkTeam {
+  metadata?: KubeObjectMeta;
+  spec?: {
+    description?: string;
+    strategy?: string;
+    members?: Array<{ name?: string; type?: string }>;
+    [key: string]: unknown;
+  };
+  status?: KagentAgentStatus;
+}
+
+export interface ArkModel {
+  metadata?: KubeObjectMeta;
+  spec?: {
+    type?: string;
+    provider?: string;
+    model?: { value?: string; [key: string]: unknown };
+    [key: string]: unknown;
+  };
 }
 
 /**

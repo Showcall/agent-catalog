@@ -5,15 +5,11 @@
  * sweep) it's on by default.
  */
 
-import { KubeConfig, AppsV1Api, CoreV1Api } from '@kubernetes/client-node';
-import type {
-  EntityProvider,
-  EntityProviderConnection,
-} from '@backstage/plugin-catalog-node';
+import { AppsV1Api, CoreV1Api } from '@kubernetes/client-node';
 import type { LoggerService } from '@backstage/backend-plugin-api';
 import type { Entity } from '@backstage/catalog-model';
 import { isClaimed } from './discovery';
-import { ClusterEntityCache } from './clusterEntityCache';
+import { ClusterScanningProvider } from './ClusterScanningProvider';
 import {
   isSuppressed,
   matchWorkload,
@@ -28,59 +24,20 @@ import type {
 } from './types';
 import type { UsageService } from './UsageService';
 
-export class HeuristicDiscoveryProvider implements EntityProvider {
-  private connection?: EntityProviderConnection;
-  private readonly clusterCache = new ClusterEntityCache();
-
+export class HeuristicDiscoveryProvider extends ClusterScanningProvider {
   constructor(
-    private readonly config: AgentCatalogConfig,
-    private readonly logger: LoggerService,
+    config: AgentCatalogConfig,
+    logger: LoggerService,
     private readonly usage?: UsageService,
-  ) {}
+  ) {
+    super(config, logger);
+  }
 
   getProviderName(): string {
     return 'heuristic-discovery-provider';
   }
 
-  async connect(connection: EntityProviderConnection): Promise<void> {
-    this.connection = connection;
-  }
-
-  async refresh(): Promise<void> {
-    if (!this.connection) {
-      throw new Error('HeuristicDiscoveryProvider not connected to the catalog');
-    }
-    for (const cluster of this.config.clusters) {
-      try {
-        this.clusterCache.recordSuccess(
-          cluster.name,
-          await this.collectCluster(cluster),
-        );
-      } catch (e) {
-        this.logger.error(
-          `heuristics: failed to scan cluster ${cluster.name}: ${e}`,
-        );
-      }
-    }
-    await this.connection.applyMutation({
-      type: 'full',
-      entities: this.clusterCache.entities().map(entity => ({
-        entity,
-        locationKey: this.getProviderName(),
-      })),
-    });
-  }
-
-  private makeKubeConfig(cluster: ClusterConfig): KubeConfig {
-    const kc = new KubeConfig();
-    if (cluster.inCluster) kc.loadFromCluster();
-    else if (cluster.kubeconfigPath) kc.loadFromFile(cluster.kubeconfigPath);
-    else kc.loadFromDefault();
-    if (cluster.context) kc.setCurrentContext(cluster.context);
-    return kc;
-  }
-
-  private async collectCluster(cluster: ClusterConfig): Promise<Entity[]> {
+  protected async collectCluster(cluster: ClusterConfig): Promise<Entity[]> {
     const kc = this.makeKubeConfig(cluster);
     const apps = kc.makeApiClient(AppsV1Api);
     const core = kc.makeApiClient(CoreV1Api);

@@ -16,3 +16,4 @@ ADR.
 | [0007](0007-audit-sweep.md) | Audit sweep: probe unlabeled Services for agent cards (entities directly, trigger-first) | accepted (impl. pending) |
 | [0008](0008-gateway-usage.md) | Traction from the LLM-gateway ledger (LiteLLM first; team rollups + per-agent via alias) | accepted |
 | [0009](0009-heuristic-discovery.md) | Heuristic discovery of LLM-consuming workloads (`llm-workload`, evidence annotations) | accepted |
+| [0010](0010-ark-and-provider-base.md) | Tier B begins: ARK ingestion (Teams as `ai-agent-team` Components) + shared provider base | accepted |

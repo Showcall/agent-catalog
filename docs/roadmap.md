@@ -44,7 +44,7 @@ rest.
 |---|---|---|
 | 1 | BYO agents projected from the kagent CRD (image/env-name provenance) | ✅ done |
 | 2 | Live A2A-card enrichment for all agents (kube-proxy fetch, fail-soft) | ✅ done |
-| 3 | Non-kagent discovery: **Tier A (labeled Services) ✅** — [ADR 0006](adr/0006-a2a-label-discovery.md); Tiers B/C below | 🟨 in progress |
+| 3 | Non-kagent discovery: **Tier A ✅** ([ADR 0006](adr/0006-a2a-label-discovery.md)) · **Tier B: ARK ✅** ([ADR 0010](adr/0010-ark-and-provider-base.md)), Dapr ⬜ · Tier C ⬜ | 🟨 in progress |
 | — | **LLM-gateway usage integration** (traction vs. noise + discovery by consumption) — [ADR 0008](adr/0008-gateway-usage.md) | ✅ done |
 | — | **Heuristic discovery** of LLM-consuming workloads — [ADR 0009](adr/0009-heuristic-discovery.md) | ✅ done |
 | — | **Audit sweep**: probe unlabeled Services for cards. Designed in [ADR 0007](adr/0007-audit-sweep.md): entities directly (`discovery: probe`), trigger-first, off by default. Folds into heuristic discovery as one signal among several | ⬜ (design done) |
@@ -76,11 +76,11 @@ OpenAI Agents SDK, or the Claude Agent SDK — no per-framework code.
 before declaring an agent unreachable, with per-Service annotation
 overrides.)
 
-### Tier B — additional CRD-based runtimes (same pattern as kagent)
+### Tier B — additional CRD-based runtimes (same pattern as kagent) — 🟨 ARK ✅
 
 | Runtime | Notes |
 |---|---|
-| [ARK](https://mckinsey.github.io/agents-at-scale-ark/) (McKinsey) | `Agent`, `Team`, `Query`, `Model` CRDs — very kagent-shaped. Its `Team` kind (multi-agent grouping) has no catalog equivalent yet; likely maps to `System`. |
+| [ARK](https://mckinsey.github.io/agents-at-scale-ark/) (McKinsey) | ✅ **Implemented** ([ADR 0010](adr/0010-ark-and-provider-base.md)): Agents/Teams/Models ingested; Teams map to `ai-agent-team` Components (multi-membership ruled out System). |
 | [Dapr Agents](https://dapr.io) (CNCF) | Agents ride the Dapr runtime; discovery via Dapr app annotations/components rather than a dedicated Agent CRD. |
 | [Agent Sandbox](https://kubernetes.io/blog/2026/03/20/running-agents-on-kubernetes-with-agent-sandbox/) (kubernetes-sigs) | `Sandbox` CRD — isolation primitive more than identity source; watch, don't integrate yet. |
 

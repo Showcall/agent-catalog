@@ -16,11 +16,7 @@
  * README "Kubernetes client version" section.
  */
 
-import { KubeConfig, CustomObjectsApi } from '@kubernetes/client-node';
-import type {
-  EntityProvider,
-  EntityProviderConnection,
-} from '@backstage/plugin-catalog-node';
+import { CustomObjectsApi } from '@kubernetes/client-node';
 import type { LoggerService } from '@backstage/backend-plugin-api';
 import type { Entity } from '@backstage/catalog-model';
 import {
@@ -30,7 +26,7 @@ import {
 } from './transforms';
 import { enrichAgentEntities, type CardFetch } from './enrichment';
 import { KubeProxyCardFetcher, type CardFetcher } from './cardFetcher';
-import { ClusterEntityCache } from './clusterEntityCache';
+import { ClusterScanningProvider } from './ClusterScanningProvider';
 import type { UsageService } from './UsageService';
 import type {
   AgentCatalogConfig,
@@ -39,9 +35,7 @@ import type {
   KagentModelConfig,
 } from './types';
 
-export class KagentEntityProvider implements EntityProvider {
-  private connection?: EntityProviderConnection;
-  private readonly clusterCache = new ClusterEntityCache();
+export class KagentEntityProvider extends ClusterScanningProvider {
   /** Fail-soft cache of last-known cards, keyed by cluster/ns/name. */
   private readonly cardCache = new Map<
     string,
@@ -49,68 +43,16 @@ export class KagentEntityProvider implements EntityProvider {
   >();
 
   constructor(
-    private readonly config: AgentCatalogConfig,
-    private readonly logger: LoggerService,
+    config: AgentCatalogConfig,
+    logger: LoggerService,
     /** Optional gateway-usage integration (ADR 0008). */
     private readonly usage?: UsageService,
-  ) {}
+  ) {
+    super(config, logger);
+  }
 
   getProviderName(): string {
     return 'kagent-entity-provider';
-  }
-
-  async connect(connection: EntityProviderConnection): Promise<void> {
-    this.connection = connection;
-  }
-
-  /** Called by the scheduled task runner (wired in module.ts). */
-  async refresh(): Promise<void> {
-    if (!this.connection) {
-      throw new Error('KagentEntityProvider not connected to the catalog');
-    }
-
-    for (const cluster of this.config.clusters) {
-      try {
-        const entities = await this.collectCluster(cluster);
-        this.clusterCache.recordSuccess(cluster.name, entities);
-        this.logger.info(
-          `agent-catalog: ${entities.length} entities from cluster ${cluster.name}`,
-        );
-      } catch (e) {
-        // One unreachable cluster must not wipe itself or the others: keep
-        // its last successful snapshot in the full mutation until it lists
-        // successfully again (including a successful empty list).
-        this.logger.error(
-          `agent-catalog: failed to sync cluster ${cluster.name}: ${e}`,
-        );
-      }
-    }
-
-    await this.connection.applyMutation({
-      type: 'full',
-      entities: this.clusterCache.entities().map(entity => ({
-        entity,
-        locationKey: this.getProviderName(),
-      })),
-    });
-  }
-
-  private makeClients(cluster: ClusterConfig): {
-    custom: CustomObjectsApi;
-    kc: KubeConfig;
-  } {
-    const kc = new KubeConfig();
-    if (cluster.inCluster) {
-      kc.loadFromCluster();
-    } else if (cluster.kubeconfigPath) {
-      kc.loadFromFile(cluster.kubeconfigPath);
-    } else {
-      kc.loadFromDefault();
-    }
-    if (cluster.context) {
-      kc.setCurrentContext(cluster.context);
-    }
-    return { custom: kc.makeApiClient(CustomObjectsApi), kc };
   }
 
   /** Resolve an agent's card: live fetch, else last-known (stale), else none. */
@@ -132,8 +74,9 @@ export class KagentEntityProvider implements EntityProvider {
     return { card: null, source: 'unreachable' };
   }
 
-  private async collectCluster(cluster: ClusterConfig): Promise<Entity[]> {
-    const { custom: api, kc } = this.makeClients(cluster);
+  protected async collectCluster(cluster: ClusterConfig): Promise<Entity[]> {
+    const kc = this.makeKubeConfig(cluster);
+    const api = kc.makeApiClient(CustomObjectsApi);
     const { group, version } = this.config.crd;
     const exclude = new Set(this.config.excludeNamespaces ?? []);
     const opts = {
@@ -227,6 +170,9 @@ export class KagentEntityProvider implements EntityProvider {
       );
     }
 
+    this.logger.info(
+      `agent-catalog: ${entities.length} entities from cluster ${cluster.name}`,
+    );
     return entities;
   }
 }

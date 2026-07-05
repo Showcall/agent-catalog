@@ -76,7 +76,9 @@ function readyLifecycle(agent: KagentAgent): string {
     agent.metadata?.annotations?.[`${ANNOTATION_PREFIX}/lifecycle`];
   if (explicit) return explicit;
   const ready = agent.status?.conditions?.some(
-    c => (c.type === 'Ready' || c.type === 'Accepted') && c.status === 'True',
+    c =>
+      (c.type === 'Ready' || c.type === 'Accepted' || c.type === 'Available') &&
+      c.status === 'True',
   );
   return ready ? 'production' : 'experimental';
 }
