@@ -7,17 +7,19 @@
  *
  * Discovered automatically via `app.packages: all`; the fleet page's
  * title/icon surface it in the sidebar through the app's nav module.
+ * Classic/custom sidebars can import AgentCatalogSidebarItem.
  */
 
 import { PageBlueprint, createFrontendPlugin } from '@backstage/frontend-plugin-api';
 import { EntityCardBlueprint } from '@backstage/plugin-catalog-react/alpha';
 import type { Entity } from '@backstage/catalog-model';
 import AndroidIcon from '@material-ui/icons/Android';
+import { agentCatalogNavItem } from './nav';
 
 const agentFleetPage = PageBlueprint.make({
   params: {
-    path: '/agents',
-    title: 'AI Agents',
+    path: agentCatalogNavItem.path,
+    title: agentCatalogNavItem.title,
     icon: <AndroidIcon />,
     loader: () =>
       import('./components/FleetPage').then(m => <m.FleetPage />),

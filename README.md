@@ -54,13 +54,24 @@ too.
 
 ## Quick start (into an existing Backstage app)
 
-1. Copy `plugins/catalog-backend-module-agent-catalog` into your repo's
-   `plugins/` and add it to the workspace.
-2. Wire it into `packages/backend/src/index.ts`:
+1. Copy `plugins/catalog-backend-module-agent-catalog` and
+   `plugins/plugin-agent-catalog` into your repo's `plugins/` and add them
+   to the workspace.
+2. Wire the backend module into `packages/backend/src/index.ts`:
    ```ts
    backend.add(import('@internal/catalog-backend-module-agent-catalog'));
    ```
-3. Configure `app-config.yaml`:
+3. Add the frontend plugin package to your app dependencies. With
+   `app.packages: all`, Backstage's new frontend system discovers the
+   `/agents` page automatically. For classic/custom sidebars, add the nav
+   item explicitly:
+   ```tsx
+   import { AgentCatalogSidebarItem } from '@internal/plugin-agent-catalog';
+
+   // inside your Sidebar:
+   <AgentCatalogSidebarItem />
+   ```
+4. Configure `app-config.yaml`:
    ```yaml
    agentCatalog:
      defaultOwner: group:default/platform-team
@@ -87,7 +98,7 @@ too.
      #   windowDays: 7
      #   includeCost: false
    ```
-4. Register the scaffolder template (catalog locations or the UI):
+5. Register the scaffolder template (catalog locations or the UI):
    `templates/new-kagent-agent/template.yaml`
 
 **RBAC:** the kubeconfig needs `list` on services, `get` on
