@@ -36,6 +36,10 @@ questions for services. This plugin makes it answer them for agents.
 
 ## The demo
 
+For the fastest local walkthrough, see [demo/README.md](demo/README.md).
+It deploys a labeled A2A agent, a heuristic shadow workload, and a
+LiteLLM-shaped mock usage ledger into your current Kubernetes context.
+
 1. `kind create cluster` + install [kagent](https://kagent.dev) — any
    existing agents appear in the catalog within one sync cycle, tagged
    `ai-agent`, with owners and model/tool dependencies.
@@ -157,10 +161,10 @@ New to agents, A2A, or MCP? Start with the primer.
 
 ## Current limitations (deliberate)
 
-- **Full mutation per refresh**: a cluster that fails to sync drops its
-  entities until the next successful pass
-  ([ADR 0003](docs/adr/0003-full-mutation-per-refresh.md)); move to
-  per-cluster providers at multi-cluster scale.
+- **Full mutation per provider**: deleted resources disappear on the next
+  successful sync; transient cluster failures keep the last successful
+  per-cluster snapshot so outages do not look like mass deletions
+  ([ADR 0003](docs/adr/0003-full-mutation-per-refresh.md)).
 - **Frontend v1 shipped**: an `/agents` fleet page (owner, runtime,
   discovery, reachable, last-active, requests) and an Agent card on every
   agent's entity page. Future: card/skill viewer, fleet filters, the

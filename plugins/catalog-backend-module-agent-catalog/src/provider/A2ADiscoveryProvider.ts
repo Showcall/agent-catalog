@@ -22,6 +22,7 @@ import type { Entity } from '@backstage/catalog-model';
 import type { A2ACard } from './transforms';
 import { enrichAgentEntities, type CardFetch } from './enrichment';
 import { KubeProxyCardFetcher } from './cardFetcher';
+import { ClusterEntityCache } from './clusterEntityCache';
 import {
   DISCOVERY_LOCATION_SCHEME,
   discoveredCardPaths,
@@ -39,6 +40,7 @@ import type { UsageService } from './UsageService';
 
 export class A2ADiscoveryProvider implements EntityProvider {
   private connection?: EntityProviderConnection;
+  private readonly clusterCache = new ClusterEntityCache();
   /** Fail-soft cache of last-known cards, keyed by cluster/ns/name. */
   private readonly cardCache = new Map<
     string,
@@ -65,12 +67,10 @@ export class A2ADiscoveryProvider implements EntityProvider {
       throw new Error('A2ADiscoveryProvider not connected to the catalog');
     }
 
-    const allEntities: Entity[] = [];
-
     for (const cluster of this.config.clusters) {
       try {
         const entities = await this.collectCluster(cluster);
-        allEntities.push(...entities);
+        this.clusterCache.recordSuccess(cluster.name, entities);
       } catch (e) {
         this.logger.error(
           `a2a-discovery: failed to scan cluster ${cluster.name}: ${e}`,
@@ -80,7 +80,7 @@ export class A2ADiscoveryProvider implements EntityProvider {
 
     await this.connection.applyMutation({
       type: 'full',
-      entities: allEntities.map(entity => ({
+      entities: this.clusterCache.entities().map(entity => ({
         entity,
         locationKey: this.getProviderName(),
       })),

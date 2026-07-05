@@ -13,6 +13,7 @@ import type {
 import type { LoggerService } from '@backstage/backend-plugin-api';
 import type { Entity } from '@backstage/catalog-model';
 import { isClaimed } from './discovery';
+import { ClusterEntityCache } from './clusterEntityCache';
 import {
   isSuppressed,
   matchWorkload,
@@ -29,6 +30,7 @@ import type { UsageService } from './UsageService';
 
 export class HeuristicDiscoveryProvider implements EntityProvider {
   private connection?: EntityProviderConnection;
+  private readonly clusterCache = new ClusterEntityCache();
 
   constructor(
     private readonly config: AgentCatalogConfig,
@@ -48,10 +50,12 @@ export class HeuristicDiscoveryProvider implements EntityProvider {
     if (!this.connection) {
       throw new Error('HeuristicDiscoveryProvider not connected to the catalog');
     }
-    const allEntities: Entity[] = [];
     for (const cluster of this.config.clusters) {
       try {
-        allEntities.push(...(await this.collectCluster(cluster)));
+        this.clusterCache.recordSuccess(
+          cluster.name,
+          await this.collectCluster(cluster),
+        );
       } catch (e) {
         this.logger.error(
           `heuristics: failed to scan cluster ${cluster.name}: ${e}`,
@@ -60,7 +64,7 @@ export class HeuristicDiscoveryProvider implements EntityProvider {
     }
     await this.connection.applyMutation({
       type: 'full',
-      entities: allEntities.map(entity => ({
+      entities: this.clusterCache.entities().map(entity => ({
         entity,
         locationKey: this.getProviderName(),
       })),

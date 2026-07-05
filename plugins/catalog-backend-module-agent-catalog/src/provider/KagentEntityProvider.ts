@@ -30,6 +30,7 @@ import {
 } from './transforms';
 import { enrichAgentEntities, type CardFetch } from './enrichment';
 import { KubeProxyCardFetcher, type CardFetcher } from './cardFetcher';
+import { ClusterEntityCache } from './clusterEntityCache';
 import type { UsageService } from './UsageService';
 import type {
   AgentCatalogConfig,
@@ -40,6 +41,7 @@ import type {
 
 export class KagentEntityProvider implements EntityProvider {
   private connection?: EntityProviderConnection;
+  private readonly clusterCache = new ClusterEntityCache();
   /** Fail-soft cache of last-known cards, keyed by cluster/ns/name. */
   private readonly cardCache = new Map<
     string,
@@ -67,20 +69,17 @@ export class KagentEntityProvider implements EntityProvider {
       throw new Error('KagentEntityProvider not connected to the catalog');
     }
 
-    const allEntities: Entity[] = [];
-
     for (const cluster of this.config.clusters) {
       try {
         const entities = await this.collectCluster(cluster);
-        allEntities.push(...entities);
+        this.clusterCache.recordSuccess(cluster.name, entities);
         this.logger.info(
           `agent-catalog: ${entities.length} entities from cluster ${cluster.name}`,
         );
       } catch (e) {
-        // One unreachable cluster must not wipe entities from the others —
-        // but note: with full mutation, skipping a failed cluster WILL drop
-        // its previously-synced entities. MVP tradeoff; delta mutations or
-        // per-cluster providers fix this later.
+        // One unreachable cluster must not wipe itself or the others: keep
+        // its last successful snapshot in the full mutation until it lists
+        // successfully again (including a successful empty list).
         this.logger.error(
           `agent-catalog: failed to sync cluster ${cluster.name}: ${e}`,
         );
@@ -89,7 +88,7 @@ export class KagentEntityProvider implements EntityProvider {
 
     await this.connection.applyMutation({
       type: 'full',
-      entities: allEntities.map(entity => ({
+      entities: this.clusterCache.entities().map(entity => ({
         entity,
         locationKey: this.getProviderName(),
       })),

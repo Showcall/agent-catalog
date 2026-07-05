@@ -1,0 +1,230 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: agent-catalog-demo
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: release-notes-agent-source
+  namespace: agent-catalog-demo
+data:
+  server.js: |
+    const http = require('node:http');
+    const port = Number(process.env.PORT || 8080);
+    const card = {
+      name: 'release-notes-agent',
+      description: 'Summarizes merged pull requests into release notes.',
+      protocolVersion: '0.3',
+      preferredTransport: 'jsonrpc',
+      capabilities: { streaming: false, pushNotifications: false },
+      skills: [
+        {
+          id: 'draft-release-notes',
+          name: 'Draft release notes',
+          description: 'Turns merged pull requests into a concise release note draft.',
+          tags: ['engineering', 'release'],
+        },
+      ],
+    };
+    const server = http.createServer((req, res) => {
+      if (req.url === '/.well-known/agent-card.json' || req.url === '/.well-known/agent.json') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify(card, null, 2));
+        return;
+      }
+      if (req.url === '/healthz') {
+        res.writeHead(200, { 'content-type': 'text/plain' });
+        res.end('ok');
+        return;
+      }
+      res.writeHead(404, { 'content-type': 'text/plain' });
+      res.end('not found');
+    });
+    server.listen(port, '0.0.0.0', () => process.stdout.write(`demo A2A agent listening on ${port}\n`));
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-notes-agent
+  namespace: agent-catalog-demo
+  annotations:
+    backstage.io/owner: group:default/platform-team
+    agentcatalog.io/runtime: node-a2a-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: release-notes-agent
+  template:
+    metadata:
+      labels:
+        app: release-notes-agent
+    spec:
+      containers:
+        - name: agent
+          image: node:22-alpine
+          command: ['node', '/app/server.js']
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: source
+              mountPath: /app
+      volumes:
+        - name: source
+          configMap:
+            name: release-notes-agent-source
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-notes-agent
+  namespace: agent-catalog-demo
+  labels:
+    agentcatalog.io/a2a: "true"
+  annotations:
+    backstage.io/owner: group:default/platform-team
+    agentcatalog.io/runtime: node-a2a-demo
+    agentcatalog.io/a2a-port: "8080"
+spec:
+  selector:
+    app: release-notes-agent
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sentiment-batch
+  namespace: agent-catalog-demo
+  annotations:
+    backstage.io/owner: group:default/data-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sentiment-batch
+  template:
+    metadata:
+      labels:
+        app: sentiment-batch
+    spec:
+      containers:
+        - name: batch
+          image: node:22-alpine
+          command: ['sh', '-c', 'while true; do sleep 3600; done']
+          env:
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: fake-provider-secret
+                  key: api-key
+                  optional: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mock-litellm-source
+  namespace: agent-catalog-demo
+data:
+  mock-litellm.js: |
+    const http = require('node:http');
+    const port = Number(process.env.PORT || 4000);
+    const dailyActivity = {
+      results: [
+        {
+          date: '2026-07-04',
+          breakdown: {
+            api_keys: {
+              key_release_notes: {
+                metadata: { key_alias: 'agent-catalog-demo/release-notes-agent', team_id: 'team-platform' },
+                metrics: { api_requests: 42, total_tokens: 123456, spend: 1.23 },
+              },
+              key_shadow_batch: {
+                metadata: { key_alias: 'agent-catalog-demo/sentiment-batch', team_id: 'team-data' },
+                metrics: { api_requests: 317, total_tokens: 904221, spend: 7.84 },
+              },
+              key_hackathon: {
+                metadata: { key_alias: 'hackathon-bot', team_id: null },
+                metrics: { api_requests: 19, total_tokens: 54000, spend: 0.42 },
+              },
+            },
+          },
+        },
+      ],
+      metadata: { has_more: false, page: 1 },
+    };
+    const teams = [
+      { team_id: 'team-platform', team_alias: 'platform-team' },
+      { team_id: 'team-data', team_alias: 'data-platform' },
+    ];
+    const server = http.createServer((req, res) => {
+      if (!req.headers.authorization) {
+        res.writeHead(401, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ error: 'missing bearer token' }));
+        return;
+      }
+      const url = new URL(req.url, `http://${req.headers.host}`);
+      if (url.pathname === '/user/daily/activity') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify(dailyActivity, null, 2));
+        return;
+      }
+      if (url.pathname === '/team/list') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify(teams, null, 2));
+        return;
+      }
+      if (url.pathname === '/healthz') {
+        res.writeHead(200, { 'content-type': 'text/plain' });
+        res.end('ok');
+        return;
+      }
+      res.writeHead(404, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ error: 'not found' }));
+    });
+    server.listen(port, '0.0.0.0', () => process.stdout.write(`mock LiteLLM ledger listening on ${port}\n`));
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mock-litellm
+  namespace: agent-catalog-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mock-litellm
+  template:
+    metadata:
+      labels:
+        app: mock-litellm
+    spec:
+      containers:
+        - name: ledger
+          image: node:22-alpine
+          command: ['node', '/app/mock-litellm.js']
+          ports:
+            - containerPort: 4000
+          volumeMounts:
+            - name: source
+              mountPath: /app
+      volumes:
+        - name: source
+          configMap:
+            name: mock-litellm-source
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mock-litellm
+  namespace: agent-catalog-demo
+spec:
+  selector:
+    app: mock-litellm
+  ports:
+    - name: http
+      port: 4000
+      targetPort: 4000

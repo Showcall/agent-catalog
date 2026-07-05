@@ -1,0 +1,45 @@
+app:
+  title: Agent Catalog Demo
+
+catalog:
+  locations:
+    - type: file
+      target: ./demo/backstage/org.yaml
+      rules:
+        - allow: [User, Group]
+
+agentCatalog:
+  defaultOwner: group:default/platform-team
+  excludeNamespaces:
+    - kube-system
+    - local-path-storage
+  schedule:
+    frequencyMinutes: 1
+    timeoutMinutes: 1
+  cardEnrichment:
+    timeoutMs: 2000
+    port: 8080
+    paths:
+      - /.well-known/agent-card.json
+      - /.well-known/agent.json
+  a2aDiscovery:
+    enabled: true
+    labelSelector: agentcatalog.io/a2a=true
+    claimedBy:
+      - group: kagent.dev
+        kind: Agent
+  heuristics:
+    enabled: true
+  usage:
+    enabled: true
+    source: litellm
+    baseUrl: http://localhost:4000
+    apiKeyEnv: LITELLM_SPEND_KEY
+    windowDays: 7
+    includeCost: false
+    schedule:
+      frequencyMinutes: 1
+  clusters:
+    - name: demo
+      # Omit context to use your current kubectl context.
+      # context: kind-agent-catalog-demo

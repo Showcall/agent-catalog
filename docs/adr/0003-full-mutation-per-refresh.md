@@ -1,6 +1,6 @@
 # 3. Full catalog mutation per refresh
 
-- Status: accepted (deliberate MVP tradeoff; revisit at multi-cluster scale)
+- Status: accepted (per-cluster snapshots added 2026-07-04)
 - Date: 2026-07-03 (decision predates; recorded retroactively)
 
 ## Context
@@ -13,10 +13,12 @@ full mutation requires only knowing the current truth.
 ## Decision
 
 Every refresh lists all Agent + ModelConfig CRDs from all configured
-clusters and applies one **full mutation**. The catalog converges to exactly
-what exists; deleted CRDs disappear on the next sync with no tombstone
-bookkeeping. Simple and self-healing — state can never drift from truth for
-longer than one cycle, because every cycle starts from zero.
+clusters and applies one **full mutation**. Successful cluster results are
+stored as per-cluster snapshots; the full mutation is built from the latest
+successful snapshot for each cluster. Deleted CRDs disappear on the next
+successful sync with no tombstone bookkeeping, while a transient cluster
+outage keeps that cluster's last known entities instead of presenting a
+mass deletion.
 
 ```mermaid
 sequenceDiagram
@@ -32,19 +34,19 @@ sequenceDiagram
     Note over C: converge: adds, updates,<br/>and deletions all implicit
 ```
 
-## The known sharp edge
+## The sharp edge and mitigation
 
 One provider serves N clusters. A cluster that fails to list is skipped
-(logged, not thrown) so it cannot poison the others — **but with full
-mutation, skipping a cluster silently drops its previously-synced entities
-until it recovers.** An outage of cluster A looks, in the catalog, like
-every agent on cluster A was deleted.
+(logged, not thrown) so it cannot poison the others. The provider keeps
+the failed cluster's previous successful snapshot in the full mutation
+until that cluster lists successfully again. A successful empty list is
+still authoritative and clears the cluster's entities.
 
 ## Alternatives considered
 
-- **Delta mutations.** Correct fix for the sharp edge; requires diffing
-  against previous state per cluster. Right answer later, not needed to
-  prove the product.
+- **Delta mutations.** Another fix for the sharp edge; requires diffing
+  against previous state per cluster. More machinery than needed while the
+  provider can keep per-cluster full-mutation snapshots.
 - **One provider per cluster.** Each applies a full mutation over only its
   own entities (distinct `locationKey`), so one cluster's outage can't drop
   another's entities. The likely production shape.
@@ -55,8 +57,9 @@ every agent on cluster A was deleted.
 
 - Zero drift-tracking code; deletion handling is free.
 - Catalog freshness is bounded by the schedule (default 5 min).
-- Multi-cluster fleets should move to per-cluster providers or deltas
-  before an outage of one cluster becomes a confusing mass-"deletion".
+- Multi-cluster outages preserve last-known entities; operators should use
+  provider logs/metrics to distinguish fresh data from a stale cluster
+  snapshot.
 - Live-card fetches ride the same cycle: each refresh re-fetches every
   agent's card (with per-fetch timeout and a fail-soft cache —
   [ADR 0001](0001-agent-metadata-sources.md)).
