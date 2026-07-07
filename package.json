@@ -1,0 +1,36 @@
+{
+  "name": "@showcall/agent-catalog",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Backstage backend module + frontend plugin cataloging AI agents across runtimes",
+  "homepage": "https://github.com/Showcall/agent-catalog",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Showcall/agent-catalog"
+  },
+  "license": "Apache-2.0",
+  "engines": {
+    "node": "20 || 22"
+  },
+  "packageManager": "yarn@4.13.0",
+  "workspaces": {
+    "packages": [
+      "plugins/*"
+    ]
+  },
+  "scripts": {
+    "tsc": "tsc",
+    "build": "backstage-cli repo build --all",
+    "lint": "backstage-cli repo lint",
+    "test": "backstage-cli repo test",
+    "test:all": "backstage-cli repo test --coverage",
+    "clean": "backstage-cli repo clean",
+    "prettier:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@backstage/cli": "^0.36.3",
+    "prettier": "^3.2.0",
+    "typescript": "~5.8.0"
+  },
+  "prettier": "@backstage/cli/config/prettier"
+}

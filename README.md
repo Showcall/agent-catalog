@@ -69,14 +69,14 @@ too.
    to the workspace.
 2. Wire the backend module into `packages/backend/src/index.ts`:
    ```ts
-   backend.add(import('@internal/catalog-backend-module-agent-catalog'));
+   backend.add(import('@showcall/backstage-plugin-catalog-backend-module-agent-catalog'));
    ```
 3. Add the frontend plugin package to your app dependencies. With
    `app.packages: all`, Backstage's new frontend system discovers the
    `/agents` page automatically. For classic/custom sidebars, add the nav
    item explicitly:
    ```tsx
-   import { AgentCatalogSidebarItem } from '@internal/plugin-agent-catalog';
+   import { AgentCatalogSidebarItem } from '@showcall/backstage-plugin-agent-catalog';
 
    // inside your Sidebar:
    <AgentCatalogSidebarItem />

@@ -1,10 +1,31 @@
 {
-  "name": "@internal/plugin-agent-catalog",
+  "name": "@showcall/backstage-plugin-agent-catalog",
   "version": "0.1.0",
   "description": "Backstage frontend plugin: AI agent fleet view and per-agent traction/status cards",
   "license": "Apache-2.0",
+  "homepage": "https://github.com/Showcall/agent-catalog",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Showcall/agent-catalog",
+    "directory": "plugins/plugin-agent-catalog"
+  },
+  "bugs": "https://github.com/Showcall/agent-catalog/issues",
+  "keywords": [
+    "backstage",
+    "backstage-plugin",
+    "ai-agents",
+    "a2a",
+    "kagent",
+    "catalog"
+  ],
   "main": "src/index.ts",
   "types": "src/index.ts",
+  "publishConfig": {
+    "access": "public",
+    "main": "dist/index.cjs.js",
+    "module": "dist/index.esm.js",
+    "types": "dist/index.d.ts"
+  },
   "backstage": {
     "role": "frontend-plugin",
     "pluginId": "agent-catalog"

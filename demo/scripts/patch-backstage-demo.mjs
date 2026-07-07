@@ -35,16 +35,16 @@ writeJson(rootPackage, rootPackageJson);
 
 upsertDependency(
   path.join(appDir, 'packages/app/package.json'),
-  '@internal/plugin-agent-catalog',
+  '@showcall/backstage-plugin-agent-catalog',
 );
 upsertDependency(
   path.join(appDir, 'packages/backend/package.json'),
-  '@internal/catalog-backend-module-agent-catalog',
+  '@showcall/backstage-plugin-catalog-backend-module-agent-catalog',
 );
 
 const appEntry = path.join(appDir, 'packages/app/src/App.tsx');
 let appSource = fs.readFileSync(appEntry, 'utf8');
-const frontendImport = "import agentCatalogPlugin from '@internal/plugin-agent-catalog';";
+const frontendImport = "import agentCatalogPlugin from '@showcall/backstage-plugin-agent-catalog';";
 if (!appSource.includes(frontendImport)) {
   const catalogImport = "import catalogPlugin from '@backstage/plugin-catalog/alpha';";
   if (appSource.includes(catalogImport)) {
@@ -66,7 +66,7 @@ fs.writeFileSync(appEntry, appSource);
 
 const backendIndex = path.join(appDir, 'packages/backend/src/index.ts');
 let backendSource = fs.readFileSync(backendIndex, 'utf8');
-const moduleImport = "backend.add(import('@internal/catalog-backend-module-agent-catalog'));";
+const moduleImport = "backend.add(import('@showcall/backstage-plugin-catalog-backend-module-agent-catalog'));";
 if (!backendSource.includes(moduleImport)) {
   const insertion = [
     '// agent-catalog demo: ingest kagent, ARK, A2A, heuristic, and gateway usage entities',

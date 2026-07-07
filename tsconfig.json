@@ -1,0 +1,10 @@
+{
+  "extends": "@backstage/cli/config/tsconfig.json",
+  "include": ["plugins/*/src", "plugins/*/config.d.ts"],
+  "exclude": ["node_modules"],
+  "compilerOptions": {
+    "outDir": ".",
+    "incremental": true,
+    "tsBuildInfoFile": "dist-types/tsconfig.tsbuildinfo"
+  }
+}

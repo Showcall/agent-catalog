@@ -3,7 +3,7 @@
  * new Backstage backend system, on a scheduled task runner.
  *
  * In packages/backend/src/index.ts:
- *   backend.add(import('@internal/catalog-backend-module-agent-catalog'));
+ *   backend.add(import('@showcall/backstage-plugin-catalog-backend-module-agent-catalog'));
  */
 
 import {

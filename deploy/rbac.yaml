@@ -1,0 +1,56 @@
+# Least-privilege RBAC for the agent-catalog backend module when the Backstage
+# backend runs in-cluster (config: agentCatalog.clusters[].inCluster: true).
+#
+# All access is read-only. The three non-obvious grants:
+#   - services/proxy (get): live A2A agent-card enrichment goes through the
+#     kube-apiserver service proxy (ADR 0003/0006), not a direct pod dial.
+#   - custom resources: read-only reads of kagent and ARK CRDs.
+#   - deployments (list): heuristic discovery inspects container env-var NAMES
+#     and image names only — it never reads Secret or ConfigMap values.
+#
+# Bind this to the ServiceAccount your Backstage backend Deployment runs as.
+# Adjust the namespace/name below to match your deployment.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: agent-catalog
+  namespace: backstage
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: agent-catalog-reader
+rules:
+  # Labeled A2A Service discovery + endpoint resolution for card enrichment.
+  - apiGroups: [""]
+    resources: ["services", "endpoints"]
+    verbs: ["get", "list"]
+  # Live A2A agent-card fetch via the kube-apiserver service proxy.
+  - apiGroups: [""]
+    resources: ["services/proxy"]
+    verbs: ["get"]
+  # Heuristic discovery of unlabeled LLM workloads (env-var names + images).
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["list"]
+  # kagent runtime CRDs.
+  - apiGroups: ["kagent.dev"]
+    resources: ["agents", "modelconfigs"]
+    verbs: ["get", "list"]
+  # ARK runtime CRDs.
+  - apiGroups: ["ark.mckinsey.com"]
+    resources: ["agents", "teams", "models"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: agent-catalog-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: agent-catalog-reader
+subjects:
+  - kind: ServiceAccount
+    name: agent-catalog
+    namespace: backstage

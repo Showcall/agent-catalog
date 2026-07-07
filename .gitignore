@@ -15,10 +15,9 @@ dist-types/
 build/
 *.tsbuildinfo
 
-# Package manager lockfiles for a library are intentionally omitted; the
-# lockfile lives in the consuming Backstage app's workspace, not here.
+# This repo is a standalone yarn workspace: yarn.lock IS committed so
+# `git clone && yarn install` is reproducible. Reject stray npm/pnpm locks.
 package-lock.json
-yarn.lock
 pnpm-lock.yaml
 
 # Test / coverage
