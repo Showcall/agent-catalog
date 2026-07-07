@@ -29,6 +29,14 @@ export function isValidCard(v: unknown): v is A2ACard {
   );
 }
 
+/** Normalize a client-node proxy response into the raw body text. */
+function proxyResponseText(res: unknown): string {
+  if (typeof res === 'string') return res;
+  const body = (res as { body?: unknown })?.body;
+  if (typeof body === 'string') return body;
+  return JSON.stringify(res);
+}
+
 export interface CardFetchOverrides {
   /** Per-service port override (e.g. from a Service annotation). */
   port?: number;
@@ -89,13 +97,7 @@ export class KubeProxyCardFetcher implements CardFetcher {
           this.opts.timeoutMs,
         );
         // client-node returns the proxied body as a string; be defensive.
-        const text =
-          typeof res === 'string'
-            ? res
-            : typeof (res as { body?: unknown })?.body === 'string'
-            ? (res as { body: string }).body
-            : JSON.stringify(res);
-        const card = JSON.parse(text);
+        const card = JSON.parse(proxyResponseText(res));
         if (isValidCard(card)) return card;
       } catch {
         // fall through to the next path

@@ -3,8 +3,10 @@
   "include": ["plugins/*/src", "plugins/*/config.d.ts"],
   "exclude": ["node_modules"],
   "compilerOptions": {
-    "outDir": ".",
+    "outDir": "dist-types",
+    "rootDir": ".",
     "incremental": true,
-    "tsBuildInfoFile": "dist-types/tsconfig.tsbuildinfo"
+    "tsBuildInfoFile": "dist-types/main.tsbuildinfo",
+    "jsx": "react-jsx"
   }
 }

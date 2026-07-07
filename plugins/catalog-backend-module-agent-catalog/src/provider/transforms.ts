@@ -153,6 +153,11 @@ export function agentKind(agent: KagentAgent): 'byo' | 'declarative' {
   return agent.spec?.byo && !agent.spec?.declarative ? 'byo' : 'declarative';
 }
 
+/** Stringify a resource-quantity value, treating null/undefined as absent. */
+function stringifyOrUndefined(v: unknown): string | undefined {
+  return v === undefined || v === null ? undefined : String(v);
+}
+
 /**
  * Project the parts of a BYO deployment that are safe and useful to catalog:
  * image provenance, replicas, resource requests, and env variable NAMES.
@@ -175,8 +180,8 @@ export function extractByoDeployment(agent: KagentAgent): {
     image: typeof d.image === 'string' ? d.image : undefined,
     replicas: typeof d.replicas === 'number' ? d.replicas : undefined,
     envNames,
-    cpuRequest: req.cpu != null ? String(req.cpu) : undefined,
-    memoryRequest: req.memory != null ? String(req.memory) : undefined,
+    cpuRequest: stringifyOrUndefined(req.cpu),
+    memoryRequest: stringifyOrUndefined(req.memory),
   };
 }
 

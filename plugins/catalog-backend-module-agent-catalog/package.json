@@ -46,5 +46,8 @@
   "devDependencies": {
     "@backstage/cli": "^0.36.3"
   },
-  "files": ["dist", "config.d.ts"]
+  "files": [
+    "dist",
+    "config.d.ts"
+  ]
 }
