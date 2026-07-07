@@ -49,6 +49,7 @@ rest.
 | — | **Heuristic discovery** of LLM-consuming workloads — [ADR 0009](adr/0009-heuristic-discovery.md) | ✅ done |
 | — | **Audit sweep**: probe unlabeled Services for cards. Designed in [ADR 0007](adr/0007-audit-sweep.md): entities directly (`discovery: probe`), trigger-first, off by default. Folds into heuristic discovery as one signal among several | ⬜ (design done) |
 | — | **Frontend v1**: `/agents` fleet page + Agent entity card (traction, status chips) | ✅ done |
+| — | **Headless / standalone inventory mode**: same collectors and normalized model, usable without Backstage for orgs whose agent runtimes and gateways live in separate clusters | 💡 future |
 | — | Drift scorecard: declared `a2aConfig` skills vs skills in the served card | ⬜ |
 | — | Usage scorecard: cumulative tokens/requests per agent — below | ⬜ |
 
@@ -107,6 +108,61 @@ Each source needs cloud auth + list APIs — bigger lift, after Tiers A/B
 prove the multi-source model. Registry-sourced entities will carry
 `discovery: registry` so publication claims stay distinguishable from
 observed runtime truth.
+
+## Future: headless / standalone inventory mode
+
+Backstage is the blessed OSS surface today, but it should not become the
+only possible place the inventory can exist. A realistic enterprise topology
+often looks like:
+
+- one or more Kubernetes clusters running agents and agent runtimes;
+- a separate platform-services cluster running LiteLLM or another model
+  gateway;
+- no Backstage deployment, or a Backstage deployment owned by a different
+  platform group.
+
+The long-term shape is to separate the product into three layers:
+
+1. **Collectors** read kagent, ARK, A2A Services, heuristics, registries, and
+   gateway ledgers from any configured cluster or API.
+2. **A normalized agent inventory model** joins runtime facts, ownership,
+   model configs, gateway consumers, spend, and confidence.
+3. **Surfaces** consume that inventory: the Backstage plugin first, but later
+   a CLI, JSON/API export, static report, standalone UI, or SIEM export.
+
+That lets an org configure an agent-runtime cluster and a separate gateway
+cluster without making Backstage the source of truth:
+
+```yaml
+agentCatalog:
+  clusters:
+    - name: agents-prod
+      discovery:
+        kagent: true
+        ark: true
+        a2a: true
+        heuristics: true
+
+    - name: platform-services
+      discovery:
+        kubernetes: false
+      gateways:
+        - type: litellm
+          name: company-litellm
+          baseUrl: https://litellm.internal.example.com
+```
+
+The important join is identity, not topology: key aliases, gateway metadata,
+service accounts, namespace labels, owner annotations, repos, cost centers,
+and team IDs should converge into one inventory row. A registered ARK agent
+in `agents-prod` and its LiteLLM traffic in `platform-services` are one
+thing in the inventory, even though they are observed from different places.
+
+Boundary: this mode still observes **sanctioned runtime and gateway
+infrastructure**. It does not inspect laptops, intercept direct provider
+calls, or become endpoint security. Direct-provider detection may someday
+arrive through integrations with security tooling, but it is not the catalog's
+native job.
 
 ## Usage scorecard: cumulative tokens/requests per agent
 

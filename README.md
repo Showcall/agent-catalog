@@ -37,12 +37,22 @@ questions for services. This plugin makes it answer them for agents.
 ## The demo
 
 For the fastest local walkthrough, see [demo/README.md](demo/README.md).
-It deploys a labeled A2A agent, a heuristic shadow workload, and a
-LiteLLM-shaped mock usage ledger into your current Kubernetes context.
+It installs kagent by default, deploys a labeled A2A agent, a heuristic
+shadow workload, and a LiteLLM-shaped mock usage ledger into your current
+Kubernetes context. ARK can be added as an optional second controller.
 
-1. `kind create cluster` + install [kagent](https://kagent.dev) — any
-   existing agents appear in the catalog within one sync cycle, tagged
-   `ai-agent`, with owners and model/tool dependencies.
+1. `minikube start --cpus=4 --memory=8192`
+2. `./demo/check.sh && ./demo/up.sh`
+3. `./demo/backstage.sh` — creates a disposable Backstage app under
+   `demo/.backstage-app`, installs these local plugins into it, and opens
+   the `/agents` fleet view.
+
+Once Backstage starts, kagent demo agents appear in the catalog within one
+sync cycle, tagged `ai-agent`, with owners and model/tool dependencies.
+
+For real adoption into an existing Backstage app:
+
+1. Copy the plugins into your Backstage repo.
 2. Run the **New kagent Agent** template → it opens a GitOps PR.
 3. Merge. Argo CD applies the manifest; the agent starts.
 4. Next sync, the new agent is in the catalog — owned, discoverable,

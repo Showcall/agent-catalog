@@ -28,7 +28,10 @@ coverage/
 # Logs
 *.log
 *.pid
+demo/.backstage-app/
 demo/.ark-installed-by-demo
+demo/.kagent-crds-installed-by-demo
+demo/.kagent-installed-by-demo
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

@@ -1,0 +1,69 @@
+# kagent demo agents. The ModelConfig points at the demo mock provider's
+# OpenAI-compatible endpoint, so the agents reconcile and serve live A2A
+# cards with no real key — and also exercise the card-enrichment path.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kagent-openai-demo
+  namespace: agent-catalog-demo
+stringData:
+  OPENAI_API_KEY: demo-token
+---
+apiVersion: kagent.dev/v1alpha2
+kind: ModelConfig
+metadata:
+  name: demo-model
+  namespace: agent-catalog-demo
+spec:
+  provider: OpenAI
+  model: agent-catalog-demo-model
+  apiKeySecret: kagent-openai-demo
+  apiKeySecretKey: OPENAI_API_KEY
+  openAI:
+    baseUrl: http://mock-litellm.agent-catalog-demo.svc.cluster.local:4000/v1
+---
+apiVersion: kagent.dev/v1alpha2
+kind: Agent
+metadata:
+  name: support-triage
+  namespace: agent-catalog-demo
+  annotations:
+    backstage.io/owner: group:default/platform-team
+spec:
+  type: Declarative
+  description: Triages incoming support tickets and routes them (kagent sample).
+  declarative:
+    modelConfig: demo-model
+    systemMessage: |
+      You triage support tickets: classify severity, topic, and likely owner.
+    a2aConfig:
+      skills:
+        - id: classify-ticket
+          name: Classify Ticket
+          description: Classify a support ticket's severity and topic.
+          tags: [support]
+        - id: route-ticket
+          name: Route Ticket
+          description: Suggest the owning team for a ticket.
+          tags: [support, routing]
+---
+apiVersion: kagent.dev/v1alpha2
+kind: Agent
+metadata:
+  name: docs-assistant
+  namespace: agent-catalog-demo
+  annotations:
+    backstage.io/owner: group:default/platform-team
+spec:
+  type: Declarative
+  description: Answers questions from the internal docs (kagent sample).
+  declarative:
+    modelConfig: demo-model
+    systemMessage: |
+      You answer questions using the team's documentation.
+    a2aConfig:
+      skills:
+        - id: answer-doc-question
+          name: Answer Doc Question
+          description: Answer a question grounded in internal docs.
+          tags: [docs]
