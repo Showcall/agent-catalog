@@ -8,7 +8,12 @@
 #   - deployments (list): heuristic discovery inspects container env-var NAMES
 #     and image names only — it never reads Secret or ConfigMap values.
 #
-# Bind this to the ServiceAccount your Backstage backend Deployment runs as.
+# This grants authorization only; authentication (in-cluster SA token or a
+# kubeconfig, incl. OIDC/exec-plugin logins) is your cluster's concern.
+# Bind this ClusterRole to the identity your backend runs as:
+#   - inCluster: true -> run the backend Deployment as this ServiceAccount.
+#   - kubeconfig      -> change the ClusterRoleBinding subject below to the
+#                        user/group/SA that kubeconfig authenticates as.
 # Adjust the namespace/name below to match your deployment.
 apiVersion: v1
 kind: ServiceAccount

@@ -132,11 +132,31 @@ too.
 5. Register the scaffolder template (catalog locations or the UI):
    `templates/new-kagent-agent/template.yaml`
 
-**RBAC:** apply the least-privilege, read-only manifest at
-[deploy/rbac.yaml](deploy/rbac.yaml) (services/endpoints `list`,
-`services/proxy` `get` for card fetches, `deployments` `list`, and kagent/ARK
-CR reads) and bind it to the ServiceAccount your Backstage backend runs as.
-Never use an admin kubeconfig.
+### Cluster access (authentication vs. authorization)
+
+Two separate concerns, often conflated:
+
+- **Authentication** (*who* the backend is) is **your cluster's** job, not this
+  plugin's. agent-catalog uses whatever credentials `@kubernetes/client-node`
+  loads — either an in-cluster ServiceAccount token or a kubeconfig — and never
+  handles login itself. If your kubeconfig authenticates via an exec plugin
+  (`aws eks get-token`, `gcloud`, OIDC, …), that all happens upstream; the
+  plugin just presents the resulting identity.
+- **Authorization** (*what* it may read) is [deploy/rbac.yaml](deploy/rbac.yaml):
+  a least-privilege, read-only `ClusterRole` (services/endpoints `list`,
+  `services/proxy` `get` for card fetches, `deployments` `list`, kagent/ARK CR
+  reads). Kubernetes checks it *after* authentication succeeds. Never use an
+  admin kubeconfig.
+
+Bind that `ClusterRole` to the identity your backend actually runs as:
+
+| Deployment (`agentCatalog.clusters[]`) | Identity | Binding |
+|---|---|---|
+| `inCluster: true` (Backstage runs in the cluster) | the pod's ServiceAccount | Run the backend **as** `backstage/agent-catalog`; `deploy/rbac.yaml` binds it as-is. |
+| `kubeconfigPath` / `context` (Backstage runs outside) | whatever the kubeconfig authenticates as | Edit the `ClusterRoleBinding` subject to that user/group/SA. |
+
+The manifest defaults to ServiceAccount `agent-catalog` in namespace
+`backstage` — adjust the namespace/name/subject to match your deployment.
 
 ### Before you trust it (10 minutes)
 
