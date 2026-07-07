@@ -1,0 +1,47 @@
+name: Release
+
+# Publishes both @showcall/* workspace packages to npm when a version tag is
+# pushed (e.g. `git tag v0.1.0 && git push origin v0.1.0`).
+#
+# Prerequisites (one-time, done outside this repo):
+#   1. The npm org `showcall` exists.
+#   2. A repo secret NPM_TOKEN holds an npm automation/granular token with
+#      publish rights to @showcall/*.
+# The package versions in package.json are what get published — bump them to
+# match the tag before tagging. --tolerate-republish makes re-runs idempotent.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch: {}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install
+        run: yarn install --immutable
+
+      - name: Type check
+        run: yarn tsc
+
+      - name: Build packages
+        run: yarn build
+
+      - name: Publish to npm
+        env:
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          yarn workspaces foreach --all --no-private --topological \
+            npm publish --access public --tolerate-republish
