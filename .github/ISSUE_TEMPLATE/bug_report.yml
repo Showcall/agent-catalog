@@ -1,0 +1,62 @@
+name: Bug report
+description: Something isn't working as documented.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a report. This project is a **technical preview** —
+        rough edges are expected, and clear repros help a lot.
+
+        ⚠️ Do **not** report security vulnerabilities here — see
+        [SECURITY.md](../blob/main/SECURITY.md).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what did you get instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Configure agentCatalog with ...
+        2. Deploy ...
+        3. Open /agents ...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Backend module (discovery / catalog entities)
+        - Frontend plugin (/agents page, Agent card)
+        - Card enrichment (A2A)
+        - Gateway usage (LiteLLM)
+        - Demo / scripts
+        - Docs
+        - Other / not sure
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Versions and runtime details.
+      value: |
+        - agent-catalog version/commit:
+        - Backstage version:
+        - Node version:
+        - Kubernetes distro/version:
+        - Runtime(s): kagent / ARK / labeled A2A / heuristic
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Backend logs or console output. Redact secrets and internal hostnames.
+      render: shell

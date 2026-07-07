@@ -8,15 +8,12 @@ packaging.
 
 - [x] **Root yarn workspace** over `plugins/*` — `package.json` (workspaces),
   `.yarnrc.yml`, root `tsconfig.json`, `packageManager: yarn@4.13.0`.
-  - [ ] **Commit `yarn.lock`** — needs a one-time `corepack enable && yarn
-    install` in an environment with yarn + network (local machine or the
-    first CI run). The lockfile is now un-gitignored and must be committed so
-    `git clone && yarn install` is reproducible. **This is the only remaining
-    P0 blocker.**
+  - [x] **`yarn.lock` committed** — `git clone && yarn install` is
+    reproducible. Full toolchain verified standalone: `yarn tsc`, `yarn lint`,
+    `yarn test` (52 passed), `yarn build`.
 - [x] **CI** (GitHub Actions): `.github/workflows/ci.yml` runs tsc, lint,
-  test, build on Node 20 & 22 with `yarn install --immutable`. First green run
-  doubles as the "clone stands alone" proof.
-  - [ ] Add the CI badge to the README once the workflow has run once.
+  test, build on Node 20 & 22 with `yarn install --immutable`.
+  - [x] CI + license badges in the README.
 - [x] **Real package names** — `@showcall/backstage-plugin-agent-catalog` and
   `@showcall/backstage-plugin-catalog-backend-module-agent-catalog`, with
   repository/homepage/bugs/keywords and `publishConfig.access: public`.
@@ -28,10 +25,9 @@ packaging.
 
 ## P1 — the stranger's first hour
 
-- [ ] **Compatibility statement**, loud and early in the README: the frontend
-  plugin requires Backstage's **new frontend system** (legacy-frontend apps
-  get no UI — support planned, PRs welcome); Node 20/22; `@kubernetes/client-node`
-  1.x; kagent CRD v1alpha2; ARK v1alpha1 (technical preview).
+- [x] **Compatibility statement**, loud and early in the README (new
+  frontend system only; Node 20/22; client-node 1.x; kagent v1alpha2; ARK
+  v1alpha1 preview; LiteLLM usage).
 - [ ] **Screenshots in the README** — fleet page and the agent card, static
   PNGs until the screen recording lands.
 - [x] **Ship a least-privilege RBAC manifest** — `deploy/rbac.yaml` (read-only
@@ -39,7 +35,8 @@ packaging.
   kagent + ARK CR reads).
 - [x] **CONTRIBUTING.md** (workspace dev setup, test loop, ADR convention) and
   **SECURITY.md** (private vuln reporting; reads cluster state + spend ledgers).
-  - [ ] Minimal GitHub issue templates (`.github/ISSUE_TEMPLATE/`).
+  - [x] Minimal GitHub issue templates (`.github/ISSUE_TEMPLATE/` — bug,
+    feature, config with security link).
 
 ## P2 — tagging the release
 

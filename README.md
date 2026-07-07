@@ -2,6 +2,9 @@
 
 # backstage-agent-catalog
 
+[![CI](https://github.com/Showcall/agent-catalog/actions/workflows/ci.yml/badge.svg)](https://github.com/Showcall/agent-catalog/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 > *It's 10 PM. Do you know where your agents are?*
 
 AI agents are becoming ordinary production workloads — and most
@@ -33,6 +36,24 @@ questions for services. This plugin makes it answer them for agents.
 - **A fleet view.** The `/agents` page: every agent across all sources with
   owner, runtime, reachability, and traction in one sortable table — plus an
   Agent card on each entity page.
+
+## Compatibility
+
+This is a **technical preview** (v0.1.x). While on the `0.x` line, config keys
+and package APIs may still change.
+
+| Requirement | Supported |
+|---|---|
+| Backstage frontend | **New frontend system only.** The `/agents` page and Agent card require `@backstage/frontend-plugin-api`. Legacy-frontend apps still get the backend module (agents land in the catalog) but **no UI** — legacy-frontend support is planned; PRs welcome. |
+| Backstage backend | New backend system (`@backstage/backend-plugin-api`). |
+| Node.js | 20 or 22 |
+| `@kubernetes/client-node` | 1.x |
+| kagent | CRD `kagent.dev/v1alpha2` |
+| ARK | CRD `ark.mckinsey.com/v1alpha1` (technical preview) |
+| LLM-gateway usage | LiteLLM (`/user/daily/activity`, `/team/list`) |
+
+Only the **frontend** plugin is gated on the new frontend system; the backend
+module works on any new-backend-system Backstage app.
 
 ## The demo
 
@@ -111,9 +132,11 @@ too.
 5. Register the scaffolder template (catalog locations or the UI):
    `templates/new-kagent-agent/template.yaml`
 
-**RBAC:** the kubeconfig needs `list` on services, `get` on
-`services/proxy` (card fetches), and `get` on endpoints. Use a
-least-privilege ServiceAccount, not an admin config.
+**RBAC:** apply the least-privilege, read-only manifest at
+[deploy/rbac.yaml](deploy/rbac.yaml) (services/endpoints `list`,
+`services/proxy` `get` for card fetches, `deployments` `list`, and kagent/ARK
+CR reads) and bind it to the ServiceAccount your Backstage backend runs as.
+Never use an admin kubeconfig.
 
 ### Before you trust it (10 minutes)
 
