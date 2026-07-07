@@ -128,7 +128,7 @@ The long-term shape is to separate the product into three layers:
 2. **A normalized agent inventory model** joins runtime facts, ownership,
    model configs, gateway consumers, spend, and confidence.
 3. **Surfaces** consume that inventory: the Backstage plugin first, but later
-   a CLI, JSON/API export, static report, standalone UI, or SIEM export.
+   a CLI, JSON/API export, or static report.
 
 That lets an org configure an agent-runtime cluster and a separate gateway
 cluster without making Backstage the source of truth:
