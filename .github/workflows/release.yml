@@ -1,20 +1,29 @@
 name: Release
 
-# Publishes both @showcall/* workspace packages to npm when a version tag is
-# pushed (e.g. `git tag v0.1.0 && git push origin v0.1.0`).
+# Publishes both @showcall/* packages to npm on a version tag, using npm
+# Trusted Publishing (OIDC) — no long-lived NPM_TOKEN, automatic provenance.
 #
-# Prerequisites (one-time, done outside this repo):
-#   1. The npm org `showcall` exists.
-#   2. A repo secret NPM_TOKEN holds an npm automation/granular token with
-#      publish rights to @showcall/*.
-# The package versions in package.json are what get published — bump them to
-# match the tag before tagging. --tolerate-republish makes re-runs idempotent.
+# ONE-TIME SETUP (see docs/releasing.md):
+#   1. npm org `showcall` exists.
+#   2. Each package exists on npm — npm cannot configure a trusted publisher
+#      for a package that does not exist yet, so the FIRST publish of each
+#      package is a manual bootstrap (docs/releasing.md).
+#   3. On npmjs.com, each package -> Settings -> Trusted Publishing: add this
+#      repo (org `Showcall`, repo `agent-catalog`, workflow `release.yml`).
+#
+# After that, `git tag v0.1.0 && git push origin v0.1.0` publishes both
+# packages with no token. Publish uses the npm CLI, not yarn: yarn's publish
+# does not perform the npm OIDC exchange.
 
 on:
   push:
     tags:
       - "v*.*.*"
   workflow_dispatch: {}
+
+permissions:
+  contents: read
+  id-token: write # required for the npm OIDC trusted-publishing exchange
 
 jobs:
   publish:
@@ -27,8 +36,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: yarn
+          node-version: 22 # trusted publishing needs Node >= 22.14.0
+
+      - name: Update npm (trusted publishing needs npm >= 11.5.1)
+        run: npm install -g npm@latest
 
       - name: Install
         run: yarn install --immutable
@@ -39,9 +50,13 @@ jobs:
       - name: Build packages
         run: yarn build
 
-      - name: Publish to npm
-        env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          yarn workspaces foreach --all --no-private --topological \
-            npm publish --access public --tolerate-republish
+      # Publish with the npm CLI (not `yarn npm publish`) so the OIDC exchange
+      # runs. No NODE_AUTH_TOKEN: npm uses the workflow's id-token. Provenance
+      # is generated automatically; --provenance makes it explicit.
+      - name: Publish backend module
+        working-directory: plugins/catalog-backend-module-agent-catalog
+        run: npm publish --provenance --access public
+
+      - name: Publish frontend plugin
+        working-directory: plugins/plugin-agent-catalog
+        run: npm publish --provenance --access public

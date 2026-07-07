@@ -18,12 +18,15 @@ packaging.
   `@showcall/backstage-plugin-catalog-backend-module-agent-catalog`, with
   repository/homepage/bugs/keywords and `publishConfig.access: public`.
   - [x] Release workflow wired: `.github/workflows/release.yml` publishes both
-    packages on a `v*` tag (`yarn workspaces foreach npm publish`).
-    `publishConfig` verified against real tarballs (frontend is ESM-only:
-    `main` → `dist/index.esm.js`).
-  - [ ] **Owner action to enable publishing**: create npm org `showcall` +
-    add `NPM_TOKEN` repo secret (automation/granular token). First publish
-    must use the token; OIDC trusted-publishing can follow.
+    packages on a `v*` tag via **npm Trusted Publishing (OIDC)** — no token,
+    automatic provenance. `publishConfig` verified against real tarballs
+    (frontend is ESM-only: `main` → `dist/index.esm.js`). Process documented
+    in [releasing.md](releasing.md).
+  - [ ] **Owner actions to enable publishing** (see [releasing.md](releasing.md)):
+    create npm org `showcall`; bootstrap the first publish of each package
+    manually (npm can't configure a trusted publisher for a nonexistent
+    package); then add the GitHub trusted publisher in each package's npm
+    settings.
 - [x] **Config schema (`config.d.ts`)** for every `agentCatalog.*` key, wired
   via `configSchema` + `files`.
 

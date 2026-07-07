@@ -6,7 +6,7 @@
   "homepage": "https://github.com/Showcall/agent-catalog",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Showcall/agent-catalog"
+    "url": "git+https://github.com/Showcall/agent-catalog.git"
   },
   "license": "Apache-2.0",
   "engines": {
