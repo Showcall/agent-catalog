@@ -1,6 +1,6 @@
 {
   "name": "@showcall/backstage-plugin-catalog-backend-module-agent-catalog",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Backstage catalog module: ingest kagent agents, model configs, and A2A cards as catalog entities",
   "license": "Apache-2.0",
   "homepage": "https://github.com/Showcall/agent-catalog",

@@ -5,20 +5,31 @@
  *  - /agents: the fleet page — every AI agent across all sources
  *  - an "Agent" info card on ai-agent Component pages (traction + status)
  *
- * Discovered automatically via `app.packages: all`; the fleet page's
- * title/icon surface it in the sidebar through the app's nav module.
- * Classic/custom sidebars can import AgentCatalogSidebarItem.
+ * Discovered automatically via `app.packages: all`. The app's nav module
+ * (AppNav) turns a page into a sidebar item only when that page emits a
+ * routeRef *and* a title *and* an icon — a page without a routeRef is
+ * routable but never appears in the sidebar. That's why agentsRouteRef is
+ * passed below; without it the "Agents" nav item silently goes missing.
+ * Classic/custom sidebars can instead import AgentCatalogSidebarItem.
  */
 
-import { PageBlueprint, createFrontendPlugin } from '@backstage/frontend-plugin-api';
+import {
+  PageBlueprint,
+  createFrontendPlugin,
+  createRouteRef,
+} from '@backstage/frontend-plugin-api';
 import { EntityCardBlueprint } from '@backstage/plugin-catalog-react/alpha';
 import type { Entity } from '@backstage/catalog-model';
 import AndroidIcon from '@material-ui/icons/Android';
 import { agentCatalogNavItem } from './nav';
 
+/** Route to the fleet page; presence of this ref is what surfaces the nav item. */
+export const agentsRouteRef = createRouteRef();
+
 const agentFleetPage = PageBlueprint.make({
   params: {
     path: agentCatalogNavItem.path,
+    routeRef: agentsRouteRef,
     title: agentCatalogNavItem.title,
     icon: <AndroidIcon />,
     loader: () =>
