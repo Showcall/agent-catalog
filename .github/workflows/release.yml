@@ -53,10 +53,26 @@ jobs:
       # Publish with the npm CLI (not `yarn npm publish`) so the OIDC exchange
       # runs. No NODE_AUTH_TOKEN: npm uses the workflow's id-token. Provenance
       # is generated automatically; --provenance makes it explicit.
+      # Each step skips a version that is already on npm, so re-runs and the
+      # retroactive v0.1.0 tag (bootstrapped manually) don't hard-fail.
       - name: Publish backend module
         working-directory: plugins/catalog-backend-module-agent-catalog
-        run: npm publish --provenance --access public
+        run: |
+          name=$(node -p "require('./package.json').name")
+          ver=$(node -p "require('./package.json').version")
+          if npm view "$name@$ver" version >/dev/null 2>&1; then
+            echo "::notice::$name@$ver already on npm — skipping publish."
+          else
+            npm publish --provenance --access public
+          fi
 
       - name: Publish frontend plugin
         working-directory: plugins/plugin-agent-catalog
-        run: npm publish --provenance --access public
+        run: |
+          name=$(node -p "require('./package.json').name")
+          ver=$(node -p "require('./package.json').version")
+          if npm view "$name@$ver" version >/dev/null 2>&1; then
+            echo "::notice::$name@$ver already on npm — skipping publish."
+          else
+            npm publish --provenance --access public
+          fi

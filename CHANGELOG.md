@@ -8,27 +8,36 @@ changes.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-07-07
+
+First technical-preview release, published to npm as
+`@showcall/backstage-plugin-agent-catalog` and
+`@showcall/backstage-plugin-catalog-backend-module-agent-catalog`.
+
 ### Added
 
+- Agent discovery across runtimes: kagent (`kagent.dev/v1alpha2`) and ARK
+  (`ark.mckinsey.com/v1alpha1`) CRDs, runtime-agnostic labeled A2A Services,
+  and heuristic discovery of unlabeled LLM-consuming workloads.
+- Live A2A agent-card enrichment through the kube-apiserver service proxy.
+- LLM-gateway (LiteLLM) usage/traction: per-agent annotations plus a gateway
+  Resource with team rollups and unattributed-consumer surfacing.
+- `/agents` fleet view and a per-agent Agent info card (new frontend system).
 - Standalone yarn workspace over `plugins/*` with a committed lockfile —
   `git clone && yarn install && yarn test` works with no sibling app.
-- GitHub Actions CI: type check, lint, test, and package build on Node 20/22.
+- GitHub Actions CI (tsc, lint, test, build on Node 20/22) and an OIDC
+  trusted-publishing release workflow.
 - Config schema (`config.d.ts`) for all `agentCatalog.*` keys.
 - Least-privilege RBAC manifest at `deploy/rbac.yaml`.
-- `CONTRIBUTING.md` and `SECURITY.md`.
-- Runtime-pack demo structure (`demo/runtimes/<name>/`) with kagent as the
-  default runtime and ARK optional, selected via `DEMO_RUNTIMES`.
+- `CONTRIBUTING.md`, `SECURITY.md`, and a runtime-pack demo
+  (`demo/runtimes/<name>/`, kagent default / ARK optional via `DEMO_RUNTIMES`).
 
-### Changed
+### Known limitations
 
-- Package names moved from `@internal/*` to the publishable `@showcall/*`
-  scope (`@showcall/backstage-plugin-agent-catalog`,
-  `@showcall/backstage-plugin-catalog-backend-module-agent-catalog`).
+- Audit sweep designed but not implemented ([ADR 0007](docs/adr/0007-audit-sweep.md)).
+- Provider classes have no mocked-client tests yet (transforms: 52 tests).
+- Frontend requires Backstage's new frontend system; legacy-frontend apps get
+  the backend module but no UI.
 
-## [0.1.0] - unreleased
-
-Initial technical-preview surface: kagent + ARK ingestion, labeled A2A Service
-discovery, heuristic LLM-workload discovery, live A2A-card enrichment,
-LLM-gateway (LiteLLM) usage/traction, and the `/agents` fleet view.
-
-[Unreleased]: https://github.com/Showcall/agent-catalog/compare/main...HEAD
+[Unreleased]: https://github.com/Showcall/agent-catalog/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Showcall/agent-catalog/releases/tag/v0.1.0
