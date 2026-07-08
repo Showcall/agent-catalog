@@ -8,6 +8,16 @@ changes.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-07-08
+
+### Fixed
+
+- The **Agents** sidebar item now appears under Backstage's new frontend
+  system. The fleet page registered no `routeRef`, so the app's nav module
+  (`AppNav`) filtered it out — the page was reachable at `/agents` but never
+  surfaced in the sidebar. It now creates and passes a `routeRef`.
+  Classic/custom sidebars using `AgentCatalogSidebarItem` were unaffected.
+
 ## [0.1.0] - 2026-07-07
 
 First technical-preview release, published to npm as
@@ -39,5 +49,6 @@ First technical-preview release, published to npm as
 - Frontend requires Backstage's new frontend system; legacy-frontend apps get
   the backend module but no UI.
 
-[Unreleased]: https://github.com/Showcall/agent-catalog/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Showcall/agent-catalog/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/Showcall/agent-catalog/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Showcall/agent-catalog/releases/tag/v0.1.0

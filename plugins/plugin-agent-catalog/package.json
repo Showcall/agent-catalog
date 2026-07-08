@@ -1,6 +1,6 @@
 {
   "name": "@showcall/backstage-plugin-agent-catalog",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Backstage frontend plugin: AI agent fleet view and per-agent traction/status cards",
   "license": "Apache-2.0",
   "homepage": "https://github.com/Showcall/agent-catalog",
