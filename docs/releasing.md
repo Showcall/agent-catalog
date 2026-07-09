@@ -64,6 +64,13 @@ Repeat for both packages. No `NPM_TOKEN` secret is needed.
 
 Notes:
 
+- **Provenance requires a public repo.** npm rejects a provenance bundle from
+  a private source repo (`E422 … source repository visibility: "private"`). The
+  repo must stay public, or drop `--provenance` from the workflow.
+- The workflow publishes on **Node 24** on purpose: its bundled npm already
+  meets trusted-publishing requirements (npm ≥ 11.5.1) with provenance deps
+  intact. Do not add `npm install -g npm@latest` — that broke provenance with
+  `Cannot find module 'sigstore'`.
 - `npm publish` fails if that exact version already exists — bump the version,
   don't re-tag.
 - To migrate away from trusted publishing later (or bootstrap in CI instead of
