@@ -15,40 +15,8 @@ import {
 } from '@backstage/core-components';
 import { useApi } from '@backstage/core-plugin-api';
 import { catalogApiRef, EntityRefLink } from '@backstage/plugin-catalog-react';
-import type { Entity } from '@backstage/catalog-model';
 import { Chip } from '@material-ui/core';
-
-const A = 'agentcatalog.io';
-
-interface AgentRow {
-  entity: Entity;
-  name: string;
-  owner: string;
-  runtime: string;
-  discovery: string;
-  lifecycle: string;
-  reachable: string;
-  lastActive: string;
-  requests: number | undefined;
-  window: string;
-}
-
-function toRow(entity: Entity): AgentRow {
-  const ann = entity.metadata.annotations ?? {};
-  const requests = ann[`${A}/usage-requests`];
-  return {
-    entity,
-    name: entity.metadata.title ?? entity.metadata.name,
-    owner: String(entity.spec?.owner ?? '—'),
-    runtime: ann[`${A}/runtime`] ?? 'unknown',
-    discovery: ann[`${A}/discovery`] ?? '—',
-    lifecycle: String(entity.spec?.lifecycle ?? '—'),
-    reachable: ann[`${A}/reachable`] ?? '—',
-    lastActive: ann[`${A}/last-active`] ?? '—',
-    requests: requests !== undefined ? Number(requests) : undefined,
-    window: ann[`${A}/usage-window`] ?? '',
-  };
-}
+import { toRow, type AgentRow } from './rows';
 
 const columns: TableColumn<AgentRow>[] = [
   {
