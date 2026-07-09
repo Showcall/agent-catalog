@@ -17,6 +17,21 @@ changes.
 - Frontend tests: extracted the fleet-row projection to a pure `toRow` and
   unit-tested it, plus render tests for `AgentInfoCard`. 52 → 80 tests.
 
+### Security
+
+- **Card-fetch path hardening.** The `agentcatalog.io/a2a-path` Service
+  annotation is untrusted (set by whoever can label a discoverable Service)
+  and flowed into a privileged kube-apiserver service-proxy request. It is now
+  sanitized: paths containing a scheme, query, fragment, percent-encoding, or a
+  `..` traversal segment are rejected and fall back to the well-known card
+  paths. `agentcatalog.io/a2a-port` is clamped to a valid TCP port (1–65535).
+- **Response size caps.** Card bodies over 1 MiB are skipped before parsing,
+  and oversized LiteLLM usage responses are rejected — bounding parse cost and
+  stored-entity size against a hostile or broken endpoint.
+- **Gateway key protection.** The LiteLLM spend key is never sent over a
+  non-https, non-loopback `baseUrl` (fail closed); http remains allowed only
+  for loopback (local dev / the demo ledger).
+
 ## [0.1.1] - 2026-07-08
 
 ### Fixed

@@ -19,6 +19,7 @@ import {
   resolveOwner,
   type TransformOptions,
 } from './transforms';
+import { sanitizeCardPath } from './cardFetcher';
 
 export const DISCOVERY_LOCATION_SCHEME = 'a2a-discovery';
 
@@ -42,19 +43,30 @@ export function isClaimed(
   return false;
 }
 
-/** Card port: annotation override, else the Service's first port, else 8080. */
+/**
+ * Card port: annotation override, else the Service's first port, else 8080.
+ * The annotation is untrusted (set by whoever labels the Service), so it must
+ * parse to a valid TCP port (1–65535); anything else falls back.
+ */
 export function discoveredCardPort(svc: DiscoveredService): number {
   const ann = svc.metadata?.annotations?.[`${ANNOTATION_PREFIX}/a2a-port`];
   const parsed = ann ? Number(ann) : NaN;
-  if (Number.isInteger(parsed) && parsed > 0) return parsed;
+  if (Number.isInteger(parsed) && parsed >= 1 && parsed <= 65535) return parsed;
   const first = svc.spec?.ports?.[0]?.port;
   return typeof first === 'number' ? first : 8080;
 }
 
-/** Card path override: annotation replaces the default fallback chain. */
+/**
+ * Card path override: annotation replaces the default fallback chain. The
+ * annotation is untrusted, so it is sanitized (see `sanitizeCardPath`); an
+ * unsafe value is ignored, falling back to the well-known default paths rather
+ * than becoming a malformed apiserver request.
+ */
 export function discoveredCardPaths(svc: DiscoveredService): string[] | undefined {
   const ann = svc.metadata?.annotations?.[`${ANNOTATION_PREFIX}/a2a-path`];
-  return ann ? [ann] : undefined;
+  if (!ann) return undefined;
+  const safe = sanitizeCardPath(ann);
+  return safe ? [safe] : undefined;
 }
 
 /**

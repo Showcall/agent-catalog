@@ -37,6 +37,37 @@ function proxyResponseText(res: unknown): string {
   return JSON.stringify(res);
 }
 
+/**
+ * Cards are a few KB at most. Anything larger is not a card and only invites a
+ * costly parse plus an oversized catalog entity, so we skip it. (The kube
+ * client buffers the proxied body before we see it, so this caps the parse and
+ * the stored payload, not the initial read — the apiserver proxy and the fetch
+ * timeout bound that. A true byte-cap would need a streamed proxy call.)
+ * Approximated by string length; a UTF-16 unit is close enough for a guard.
+ */
+export const MAX_CARD_BYTES = 1024 * 1024; // 1 MiB
+
+/**
+ * Validate a proxy path before it becomes part of a privileged apiserver call.
+ * The path may come from a Service annotation (`agentcatalog.io/a2a-path`) —
+ * i.e. from anyone who can label a discoverable Service — so it is untrusted.
+ * A strict allowlist (unreserved URL path chars + `/`) rejects schemes (`:`),
+ * queries (`?`), fragments (`#`), percent-encoding (`%`), whitespace, and
+ * control characters in one shot; `..` segments are then forbidden so a path
+ * cannot traverse out of the service-proxy scope. Returns a normalized,
+ * leading-slash-stripped path, or null if unsafe.
+ */
+export function sanitizeCardPath(raw: string): string | null {
+  if (typeof raw !== 'string') return null;
+  const trimmed = raw.trim();
+  if (!trimmed || trimmed.length > 256) return null;
+  const stripped = trimmed.replace(/^\/+/, '');
+  if (!stripped) return null;
+  if (!/^[A-Za-z0-9._~/-]+$/.test(stripped)) return null;
+  if (stripped.split('/').some(seg => seg === '..')) return null;
+  return stripped;
+}
+
 export interface CardFetchOverrides {
   /** Per-service port override (e.g. from a Service annotation). */
   port?: number;
@@ -90,14 +121,17 @@ export class KubeProxyCardFetcher implements CardFetcher {
     const name = `http:${service}:${port}`;
 
     for (const rawPath of paths) {
-      const path = rawPath.replace(/^\//, '');
+      const path = sanitizeCardPath(rawPath);
+      if (!path) continue; // unsafe or malformed path — never reaches the API
       try {
         const res: unknown = await withTimeout(
           this.api.connectGetNamespacedServiceProxyWithPath({ namespace, name, path }),
           this.opts.timeoutMs,
         );
         // client-node returns the proxied body as a string; be defensive.
-        const card = JSON.parse(proxyResponseText(res));
+        const text = proxyResponseText(res);
+        if (text.length > MAX_CARD_BYTES) continue; // oversized: not a card
+        const card = JSON.parse(text);
         if (isValidCard(card)) return card;
       } catch {
         // fall through to the next path
