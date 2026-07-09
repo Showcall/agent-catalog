@@ -72,6 +72,9 @@ what was declared.
 - **Gateway key protection.** The LiteLLM spend key is never sent over a
   non-https, non-loopback `baseUrl` (fail closed); http remains allowed only
   for loopback (local dev / the demo ledger).
+- **Dependency advisory.** Pinned `prismjs` to `^1.30.0` via a resolution to
+  clear GHSA-x7hr-w5r2-h6wg (DOM clobbering, a transitive dev dep via
+  `refractor`); a backward-compatible minor bump.
 
 ## [0.1.1] - 2026-07-08
 
