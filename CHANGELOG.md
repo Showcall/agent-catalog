@@ -8,6 +8,13 @@ changes.
 
 ## [Unreleased]
 
+### Added
+
+- Mocked-kube-client tests for the four entity providers (kagent, ARK, A2A
+  discovery, heuristic): full `refresh()` coverage of the list → transform →
+  full-mutation path, namespace exclusion, claimed/labeled yielding, and
+  fail-soft error handling (incl. ARK's "404 = no ARK here"). 52 → 72 tests.
+
 ## [0.1.1] - 2026-07-08
 
 ### Fixed

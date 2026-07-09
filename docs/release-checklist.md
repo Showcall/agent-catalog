@@ -58,6 +58,7 @@ packaging.
 - Dapr Agents / Tier C not started ([roadmap](roadmap.md)).
 - Scaffolder output shows a raw `${{ steps.pr.output.remoteUrl }}` link
   (cosmetic; the PR is created correctly).
-- Provider wiring has no mocked-client tests yet (pure transforms: 52 tests).
-  Closing this is a **1.0** gate, not a v0.1 one.
+- ~~Provider wiring has no mocked-client tests yet~~ — **done in 0.2**: the
+  four entity providers now have mocked-kube-client `refresh()` tests (72 tests
+  total). This was the main 1.0 quality gate.
 - Legacy-frontend UI variant not available.
