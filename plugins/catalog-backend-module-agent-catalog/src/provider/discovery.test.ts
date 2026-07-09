@@ -78,12 +78,32 @@ describe('card port and path resolution', () => {
   it('falls back to 8080 with no ports at all', () => {
     expect(discoveredCardPort({ metadata: {} })).toBe(8080);
   });
-  it('path annotation replaces the fallback chain', () => {
+  it('rejects a port outside 1–65535 and falls back', () => {
+    const mk = (p: string) => ({
+      metadata: { annotations: { 'agentcatalog.io/a2a-port': p } },
+      spec: { ports: [{ port: 8443 }] },
+    });
+    expect(discoveredCardPort(mk('0'))).toBe(8443);
+    expect(discoveredCardPort(mk('-1'))).toBe(8443);
+    expect(discoveredCardPort(mk('70000'))).toBe(8443);
+    expect(discoveredCardPort(mk('not-a-port'))).toBe(8443);
+  });
+  it('path annotation replaces the fallback chain (normalized)', () => {
     const svc = {
       metadata: { annotations: { 'agentcatalog.io/a2a-path': '/card.json' } },
     };
-    expect(discoveredCardPaths(svc)).toEqual(['/card.json']);
+    // sanitizeCardPath strips the leading slash; the fetch target is the same.
+    expect(discoveredCardPaths(svc)).toEqual(['card.json']);
     expect(discoveredCardPaths(labeledService)).toBeUndefined();
+  });
+  it('ignores an unsafe path override, falling back to defaults', () => {
+    const mk = (path: string) => ({
+      metadata: { annotations: { 'agentcatalog.io/a2a-path': path } },
+    });
+    expect(discoveredCardPaths(mk('../../secrets'))).toBeUndefined();
+    expect(discoveredCardPaths(mk('http://evil/x'))).toBeUndefined();
+    expect(discoveredCardPaths(mk('/x?redirect=1'))).toBeUndefined();
+    expect(discoveredCardPaths(mk('/a/../../b'))).toBeUndefined();
   });
 });
 

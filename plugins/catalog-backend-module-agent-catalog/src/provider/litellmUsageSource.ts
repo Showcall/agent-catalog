@@ -36,6 +36,34 @@ function isoDate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** Windowed usage responses are modest JSON; cap to bound a hostile/broken ledger. */
+export const MAX_USAGE_BYTES = 8 * 1024 * 1024; // 8 MiB
+
+/**
+ * True when the gateway base URL would put the API key on the wire in
+ * plaintext. https is always fine; http is tolerated only for loopback (local
+ * dev and the demo ledger on 127.0.0.1), never across a network. Unparseable
+ * or non-http(s) URLs are treated as unsafe.
+ */
+export function isInsecureGatewayUrl(baseUrl: string): boolean {
+  let u: URL;
+  try {
+    u = new URL(baseUrl);
+  } catch {
+    return true;
+  }
+  if (u.protocol === 'https:') return false;
+  if (u.protocol !== 'http:') return true;
+  const host = u.hostname;
+  return !(
+    host === 'localhost' ||
+    host === '::1' ||
+    host === '[::1]' || // WHATWG URL keeps the brackets on IPv6 hostnames
+    host === '127.0.0.1' ||
+    host.startsWith('127.')
+  );
+}
+
 export class LiteLLMUsageSource implements UsageSource {
   constructor(
     private readonly opts: {
@@ -47,11 +75,23 @@ export class LiteLLMUsageSource implements UsageSource {
   ) {}
 
   private async get(path: string): Promise<unknown> {
+    // Fail closed: never send the spend key over a plaintext, non-loopback URL.
+    // (Error text carries no key material; the caller turns a throw into a
+    // null snapshot, so usage simply reports unreachable.)
+    if (isInsecureGatewayUrl(this.opts.baseUrl)) {
+      throw new Error(
+        'refusing to send the gateway API key over a non-https, non-loopback baseUrl',
+      );
+    }
     const res = await fetch(`${this.opts.baseUrl}${path}`, {
       headers: { Authorization: `Bearer ${this.opts.apiKey}` },
       signal: AbortSignal.timeout(this.opts.timeoutMs ?? 10_000),
     });
     if (!res.ok) throw new Error(`LiteLLM ${path}: HTTP ${res.status}`);
+    const len = Number(res.headers.get('content-length') ?? NaN);
+    if (Number.isFinite(len) && len > MAX_USAGE_BYTES) {
+      throw new Error(`LiteLLM ${path}: response too large (${len} bytes)`);
+    }
     return res.json();
   }
 
