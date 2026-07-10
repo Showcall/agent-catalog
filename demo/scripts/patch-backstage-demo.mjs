@@ -82,6 +82,19 @@ if (!backendSource.includes(moduleImport)) {
 }
 
 const orgPath = path.join(rootDir, 'demo/backstage/org.yaml');
+
+// By default the demo scans the current kubectl context as one "demo" cluster.
+// Set DEMO_CLUSTER_CONTEXTS="ctxA,ctxB,ctxC" to scan several clusters instead —
+// each context becomes its own agentCatalog.clusters entry. Without this, the
+// hardcoded single entry would replace (not merge with) any multi-cluster list.
+const clusterContexts = (process.env.DEMO_CLUSTER_CONTEXTS ?? '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+const clustersYaml = clusterContexts.length
+  ? clusterContexts.map(ctx => `    - name: ${ctx}\n      context: ${ctx}`).join('\n')
+  : '    - name: demo';
+
 const overlay = `app:
   title: Agent Catalog Demo
   baseUrl: http://localhost:${frontendPort}
@@ -142,7 +155,7 @@ agentCatalog:
     schedule:
       frequencyMinutes: 1
   clusters:
-    - name: demo
+${clustersYaml}
 `;
 
 fs.writeFileSync(path.join(appDir, 'app-config.agent-catalog-demo.yaml'), overlay);

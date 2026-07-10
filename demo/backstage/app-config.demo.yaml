@@ -40,6 +40,11 @@ agentCatalog:
     schedule:
       frequencyMinutes: 1
   clusters:
+    # Each entry is scanned independently. Omit `context` to use your current
+    # kubectl context; list several entries (each with its own context) to scan
+    # multiple clusters. This whole list REPLACES any clusters set in a lower
+    # config layer — it is not merged — so include every cluster you want here.
     - name: demo
-      # Omit context to use your current kubectl context.
       # context: kind-agent-catalog-demo
+    # - name: prod-west
+    #   context: kind-prod-west

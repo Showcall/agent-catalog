@@ -77,7 +77,15 @@ DEMO_ARK_VERSION=0.1.50 ./demo/up.sh         # pin the ARK controller chart
 DEMO_ARK_PREREQS=0 DEMO_RUNTIMES="kagent ark" ./demo/up.sh  # reuse cert-manager/Gateway API
 DEMO_BACKSTAGE_PORT=3002 ./demo/backstage.sh # move the disposable Backstage frontend
 DEMO_BACKSTAGE_NO_START=1 ./demo/backstage.sh # prepare app without starting it
+# Scan several clusters (one agentCatalog.clusters entry per kubectl context):
+DEMO_CLUSTER_CONTEXTS="kind-a,kind-b,kind-c" ./demo/backstage.sh
 ```
+
+`demo/backstage.sh` regenerates the app-config overlay on every run. By default
+it scans your current kubectl context as a single `demo` cluster; set
+`DEMO_CLUSTER_CONTEXTS` to a comma-separated list of contexts to scan several at
+once (the generated `agentCatalog.clusters` list replaces, rather than merges
+with, any lower config layer).
 
 ## Existing Backstage App
 
