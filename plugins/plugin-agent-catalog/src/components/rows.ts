@@ -11,6 +11,7 @@ export interface AgentRow {
   entity: Entity;
   name: string;
   owner: string;
+  cluster: string;
   runtime: string;
   discovery: string;
   lifecycle: string;
@@ -27,6 +28,7 @@ export function toRow(entity: Entity): AgentRow {
     entity,
     name: entity.metadata.title ?? entity.metadata.name,
     owner: String(entity.spec?.owner ?? '—'),
+    cluster: ann[`${A}/cluster`] ?? '—',
     runtime: ann[`${A}/runtime`] ?? 'unknown',
     discovery: ann[`${A}/discovery`] ?? '—',
     lifecycle: String(entity.spec?.lifecycle ?? '—'),

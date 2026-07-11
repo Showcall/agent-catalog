@@ -36,6 +36,7 @@ export const AgentInfoCard = () => {
   const cardSource = ann[`${A}/card-source`];
   const discovery = ann[`${A}/discovery`];
   const runtime = ann[`${A}/runtime`];
+  const cluster = ann[`${A}/cluster`];
   const modelConfig = ann[`${A}/model-config`];
   const image = ann[`${A}/image`];
   const signals = ann[`${A}/heuristic-signals`];
@@ -48,6 +49,7 @@ export const AgentInfoCard = () => {
     >
       <Grid container spacing={2}>
         <Grid item xs={12}>
+          {cluster && <Chip size="small" variant="outlined" label={`cluster: ${cluster}`} />}
           {discovery && <Chip size="small" variant="outlined" label={`discovery: ${discovery}`} />}
           {reachable && (
             <Chip

@@ -8,6 +8,14 @@ changes.
 
 ## [Unreleased]
 
+### Added
+
+- **Cluster is now visible in the UI.** The fleet page has a `Cluster` column
+  and the per-agent card shows a `cluster: <name>` chip, so in a multi-cluster
+  setup you can tell which cluster an agent lives in. (The
+  `agentcatalog.io/cluster` annotation was already on every entity; this
+  surfaces it.)
+
 ## [0.2.0] - 2026-07-10
 
 ### Added

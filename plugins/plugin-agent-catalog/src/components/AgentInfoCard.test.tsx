@@ -31,6 +31,7 @@ describe('AgentInfoCard', () => {
   it('shows runtime, status chips, and traction for a live agent with usage', async () => {
     await renderCard(
       agentEntity({
+        'agentcatalog.io/cluster': 'prod-west',
         'agentcatalog.io/runtime': 'kagent',
         'agentcatalog.io/discovery': 'crd',
         'agentcatalog.io/reachable': 'true',
@@ -42,6 +43,7 @@ describe('AgentInfoCard', () => {
 
     expect(screen.getByText('Agent')).toBeInTheDocument();
     expect(screen.getByText('runtime: kagent')).toBeInTheDocument();
+    expect(screen.getByText('cluster: prod-west')).toBeInTheDocument();
     expect(screen.getByText('discovery: crd')).toBeInTheDocument();
     expect(screen.getByText('reachable')).toBeInTheDocument();
     expect(screen.getByText('card: live')).toBeInTheDocument();

@@ -26,6 +26,16 @@ const columns: TableColumn<AgentRow>[] = [
     render: row => <EntityRefLink entityRef={row.entity} title={row.name} />,
   },
   { title: 'Owner', field: 'owner' },
+  {
+    title: 'Cluster',
+    field: 'cluster',
+    render: row =>
+      row.cluster === '—' ? (
+        <>—</>
+      ) : (
+        <Chip label={row.cluster} size="small" variant="outlined" />
+      ),
+  },
   { title: 'Runtime', field: 'runtime' },
   {
     title: 'Discovery',

@@ -19,6 +19,7 @@ describe('toRow', () => {
     const row = toRow(
       entity(
         {
+          'agentcatalog.io/cluster': 'prod-west',
           'agentcatalog.io/runtime': 'kagent',
           'agentcatalog.io/discovery': 'crd',
           'agentcatalog.io/reachable': 'true',
@@ -34,6 +35,7 @@ describe('toRow', () => {
     expect(row).toMatchObject({
       name: 'Incident Triage',
       owner: 'group:default/sre',
+      cluster: 'prod-west',
       runtime: 'kagent',
       discovery: 'crd',
       lifecycle: 'production',
@@ -52,6 +54,7 @@ describe('toRow', () => {
     const row = toRow(entity());
     expect(row).toMatchObject({
       owner: '—',
+      cluster: '—',
       runtime: 'unknown',
       discovery: '—',
       lifecycle: '—',
