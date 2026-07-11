@@ -8,6 +8,8 @@ changes.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-10
+
 ### Added
 
 - Mocked-kube-client tests for the four entity providers (kagent, ARK, A2A
@@ -16,6 +18,13 @@ changes.
   fail-soft error handling (incl. ARK's "404 = no ARK here").
 - Frontend tests: extracted the fleet-row projection to a pure `toRow` and
   unit-tested it, plus render tests for `AgentInfoCard`. 52 → 80 tests.
+
+### Fixed
+
+- Demo: the disposable-app config overlay no longer collapses a multi-cluster
+  `agentCatalog.clusters` list down to the current context. Set
+  `DEMO_CLUSTER_CONTEXTS="ctxA,ctxB"` to scan several clusters (demo tooling
+  only — no change to the published packages).
 
 ### Security
 
@@ -73,6 +82,7 @@ First technical-preview release, published to npm as
 - Frontend requires Backstage's new frontend system; legacy-frontend apps get
   the backend module but no UI.
 
-[Unreleased]: https://github.com/Showcall/agent-catalog/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/Showcall/agent-catalog/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Showcall/agent-catalog/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Showcall/agent-catalog/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Showcall/agent-catalog/releases/tag/v0.1.0
