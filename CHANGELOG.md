@@ -10,6 +10,13 @@ changes.
 
 ### Added
 
+- **Fleet page polish + click-to-filter.** The `/agents` page leads with
+  summary tiles (agents, shadow, unreachable, unowned, runtimes) that are
+  clickable to filter the table; the "Needs attention" panel is collapsible and
+  each entity-backed finding filters the fleet to exactly the affected agents;
+  probe-discovered "shadow" agents get a ghost mark and a subtle row tint; and
+  the column chooser is now a clearly-labelled `Columns` menu. All current-state
+  and read-only — filtering the live view, not saved views or dashboards.
 - **Fleet health summary — "Needs attention".** The `/agents` page now leads
   with a prioritized, severity-ranked list of findings an owner can act on,
   derived entirely from signals already collected: unreachable agents (their
