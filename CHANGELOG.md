@@ -8,6 +8,13 @@ changes.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-11
+
+Observation-lifecycle release: the catalog now tells you not just what agents
+exist, but whether what it's showing you is current — source freshness, an
+outage that isn't a deletion, and whether a served interface has drifted from
+what was declared.
+
 ### Added
 
 - **Cluster is now visible in the UI.** The fleet page has a `Cluster` column
@@ -15,6 +22,23 @@ changes.
   setup you can tell which cluster an agent lives in. (The
   `agentcatalog.io/cluster` annotation was already on every entity; this
   surfaces it.)
+- **Observation lifecycle v0 — an outage no longer reads as a deletion.** Each
+  cluster scan stamps `agentcatalog.io/last-observed-at` and
+  `agentcatalog.io/source-status` (`available`). When a cluster list fails, the
+  last good snapshot is kept but marked `source-status: unavailable` with the
+  `source-last-success-at` it was last confirmed. The fleet page gains a
+  `Source` column (online/offline) and the agent card shows a source chip plus
+  an explicit "source is currently unavailable" note.
+- **Interface drift — declared vs. served skills.** For kagent agents with a
+  live A2A card, the declarative `a2aConfig` skill IDs are compared against the
+  skills the card actually serves. Mismatches set
+  `agentcatalog.io/interface-status` (`in-sync` | `drift`) and an
+  `interface-drift` detail (`declared only:` / `live only:`), also structured
+  under `spec.agent.interface`. Surfaced as an `Interface` column and a card
+  chip.
+- **Fleet column chooser.** The fleet table now has a columns button; lower-
+  signal columns (Discovery, Interface, Last active, Last observed) are hidden
+  by default and can be toggled on per view.
 
 ## [0.2.0] - 2026-07-10
 
