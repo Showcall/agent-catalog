@@ -4,7 +4,7 @@ Where this is going, and why in this order. Positioning holds at every rung:
 we are a *consumer* of agent runtimes, never a competitor to any of them —
 each new runtime below is a catalog **source**, not a rival.
 
-## Current priorities (dogfood-first)
+## Current priorities
 
 Ordered against the reference adopter scenario — an org with an established
 Backstage, agents mostly on Kubernetes plus some hosted platforms, adoption
@@ -51,6 +51,9 @@ rest.
 | — | **Frontend v1**: `/agents` fleet page + Agent entity card (traction, status chips) | ✅ done |
 | — | **Headless / standalone inventory mode**: same collectors and normalized model, usable without Backstage for orgs whose agent runtimes and gateways live in separate clusters | 💡 future |
 | — | Drift scorecard: declared `a2aConfig` skills vs skills in the served card | ✅ done |
+| — | **Agent observation lifecycle**: `first-seen`, `last-seen`, source evidence, confidence, and source availability so an outage never reads as deletion | ⬜ |
+| — | **Compact agent event timeline**: discovery, reachability, served-card, ownership, dependency, and usage-state transitions | ⬜ |
+| — | **Agent health summary**: prioritized current-state findings for unowned, unreachable, stale, drifting, or unattributed agents | ⬜ |
 | — | Usage scorecard: cumulative tokens/requests per agent — below | ⬜ |
 
 ## Rung 3: the runtime landscape (verified July 2026)
@@ -163,6 +166,36 @@ infrastructure**. It does not inspect laptops, intercept direct provider
 calls, or become endpoint security. Direct-provider detection may someday
 arrive through integrations with security tooling, but it is not the catalog's
 native job.
+
+## Future: agent operations layer
+
+The catalog is identity-first, not a replacement for a metrics platform or a
+security agent. Its job is to make operational evidence intelligible in agent
+terms: which agent changed, what was observed, who owns it, what it depends
+on, and what needs attention. Existing observability systems remain the place
+for deep metrics, logs, traces, and security telemetry.
+
+### Observations, timeline, and attention
+
+Every collector should be able to attach a small, normalized observation to an
+agent: source, observed time, first/last seen, confidence, evidence, and
+source health. This makes the distinction between **deleted**, **unreachable**,
+**stale**, and **temporarily unobservable** explicit.
+
+Build a compact timeline from those observations. Useful initial events:
+
+- discovered or no longer observed;
+- source or cluster became unavailable or recovered;
+- reachability or served A2A card changed;
+- owner, runtime, model, tool, or dependency changed;
+- gateway usage appeared, stopped, or remained unattributed.
+
+The `/agents` page should grow a small health summary that prioritizes facts
+an owner can act on: unowned agents, unreachable cards, stale observations,
+configuration/card drift, no traction after deployment, and gateway consumers
+with no catalog identity. It should also link an agent to its workload,
+Service, runtime source, card, model, tools, gateway evidence, and existing
+external dashboards or traces when configured.
 
 ## Usage scorecard: cumulative tokens/requests per agent
 
