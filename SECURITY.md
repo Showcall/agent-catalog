@@ -71,5 +71,5 @@ preview versions may not receive backported fixes.
 
 | Version              | Support     |
 | -------------------- | ----------- |
-| Latest `0.2.x`       | Supported   |
+| Latest `0.3.x`       | Supported   |
 | Older `0.x` releases | Best effort |
