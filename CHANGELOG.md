@@ -24,6 +24,14 @@ changes.
   `locationKey`, so it never clobbers labeled discovery. Doubles as a Tier B
   scout: agents on runtimes with no CRD provider yet still show up if they
   serve a card.
+- **Fleet health summary — "Needs attention".** The `/agents` page now leads
+  with a prioritized, severity-ranked list of findings an owner can act on,
+  derived entirely from signals already collected: unreachable agents (their
+  card couldn't be fetched), stale entries from a currently-unobservable source,
+  interface drift, unowned agents, heuristic "unverified LLM workloads",
+  deployed-but-idle agents, and gateway consumers matching no catalog entity.
+  Purely derived — no new collectors or stored state — and shows an explicit
+  "nothing needs attention" state when the fleet is clean.
 
 ### Security
 
