@@ -197,6 +197,7 @@ the list calls take positional args.
 |---|---|---|
 | kagent `Agent` CRD | `Component`, `spec.type: ai-agent` | owner from `backstage.io/owner` **annotation**, lifecycle from Ready condition |
 | Live A2A card (`/.well-known/agent-card.json`, fallback `agent.json`) | `API`, `spec.type: a2a` | the real served card; synthesized from the CRD only as unreachable fallback |
+| Declared vs live A2A skills (kagent) | Component `interface-status` annotation | shows whether the declared skill IDs still match the freshly served card |
 | kagent `ModelConfig` CRD | `Resource`, `spec.type: llm-model-config` | agents `dependsOn` it |
 | Tool / MCP references | `dependsOn` relations | the governance view: what may this agent call |
 | Any `Service` labeled `agentcatalog.io/a2a=true` | `Component` + `API` from its live card | runtime-agnostic; owner/lifecycle from Service metadata; runtime-owned Services skipped |

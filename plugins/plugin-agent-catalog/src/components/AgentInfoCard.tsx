@@ -34,6 +34,8 @@ export const AgentInfoCard = () => {
   const lastActive = ann[`${A}/last-active`];
   const reachable = ann[`${A}/reachable`];
   const cardSource = ann[`${A}/card-source`];
+  const interfaceStatus = ann[`${A}/interface-status`];
+  const interfaceDrift = ann[`${A}/interface-drift`];
   const discovery = ann[`${A}/discovery`];
   const runtime = ann[`${A}/runtime`];
   const cluster = ann[`${A}/cluster`];
@@ -61,6 +63,16 @@ export const AgentInfoCard = () => {
             />
           )}
           {cardSource && <Chip size="small" variant="outlined" label={`card: ${cardSource}`} />}
+          {interfaceStatus && (
+            <Chip
+              size="small"
+              label={interfaceStatus === 'in-sync' ? 'interface: in sync' : 'interface: drift'}
+              style={{
+                backgroundColor:
+                  interfaceStatus === 'in-sync' ? '#1db95433' : '#f5a52433',
+              }}
+            />
+          )}
         </Grid>
 
         <Stat label={`Requests${window ? ` / ${window}` : ''}`} value={requests ?? '—'} />
@@ -74,6 +86,13 @@ export const AgentInfoCard = () => {
               Flagged because: <code>{signals}</code>. If this is a real
               agent, label its Service <code>agentcatalog.io/a2a: "true"</code>;
               if it's a false positive, label it <code>"false"</code>.
+            </Typography>
+          </Grid>
+        )}
+        {interfaceDrift && (
+          <Grid item xs={12}>
+            <Typography variant="body2" color="textSecondary">
+              Declared interface differs from the live card: <code>{interfaceDrift}</code>.
             </Typography>
           </Grid>
         )}

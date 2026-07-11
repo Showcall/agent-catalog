@@ -1,8 +1,15 @@
 import { kagentAgentToEntities } from './transforms';
-import { enrichAgentEntities, type CardFetch } from './enrichment';
+import {
+  compareInterfaceSkills,
+  enrichAgentEntities,
+  type CardFetch,
+} from './enrichment';
 import type { KagentAgent } from './types';
 
-const OPTS = { clusterName: 'prod-east', defaultOwner: 'group:default/platform-team' };
+const OPTS = {
+  clusterName: 'prod-east',
+  defaultOwner: 'group:default/platform-team',
+};
 
 const declarativeAgent: KagentAgent = {
   metadata: { name: 'triage', namespace: 'ops' },
@@ -46,6 +53,10 @@ describe('enrichAgentEntities', () => {
     const api = out.find(e => e.kind === 'API')!;
     expect(ann(component, 'card-source')).toBe('live');
     expect(ann(component, 'reachable')).toBe('true');
+    expect(ann(component, 'interface-status')).toBe('drift');
+    expect(ann(component, 'interface-drift')).toBe(
+      'declared only: triage; live only: do-thing',
+    );
     expect(component.spec?.providesApis).toEqual(['triage-a2a-ops-prod-east']);
 
     const card = JSON.parse(String(api.spec?.definition));
@@ -70,7 +81,9 @@ describe('enrichAgentEntities', () => {
     expect(component.spec?.providesApis).toEqual([
       'custom-bot-a2a-team-x-prod-east',
     ]);
-    expect(JSON.parse(String(api.spec?.definition)).skills[0].id).toBe('do-thing');
+    expect(JSON.parse(String(api.spec?.definition)).skills[0].id).toBe(
+      'do-thing',
+    );
   });
 
   it('declarative unreachable -> keeps synthesized card, flagged not reachable', () => {
@@ -116,6 +129,28 @@ describe('enrichAgentEntities', () => {
     const api = out.find(e => e.kind === 'API')!;
     expect(ann(component, 'card-source')).toBe('stale');
     expect(ann(component, 'reachable')).toBe('false');
+    expect(ann(component, 'interface-status')).toBeUndefined();
     expect(ann(api, 'card-source')).toBe('stale');
+  });
+});
+
+describe('compareInterfaceSkills', () => {
+  it('reports an in-sync contract when skill IDs agree regardless of order', () => {
+    expect(
+      compareInterfaceSkills(
+        [{ id: 'triage' }, { id: 'summarize' }],
+        [{ id: 'summarize' }, { id: 'triage' }],
+      ),
+    ).toMatchObject({
+      status: 'in-sync',
+      declaredOnly: [],
+      liveOnly: [],
+    });
+  });
+
+  it('does not infer drift when the declarative contract has no skill IDs', () => {
+    expect(
+      compareInterfaceSkills([{ name: 'Triage' }], [{ id: 'triage' }]),
+    ).toBeUndefined();
   });
 });

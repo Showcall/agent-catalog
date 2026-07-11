@@ -52,8 +52,11 @@ agents.
 
 Flat, greppable facts live in `agentcatalog.io/*` annotations
 (cluster, namespace, model-config, `runtime`, `discovery`, `reachable`,
-`card-source`); rich structured data rides in `spec.agent` for future
+`card-source`, `interface-status`); rich structured data rides in `spec.agent` for future
 frontend use.
+
+For declarative kagent agents with a freshly fetched card, `interface-status`
+is `in-sync` or `drift` according to the declared and live A2A skill IDs.
 
 ## Registries vs. catalogs — two different questions
 

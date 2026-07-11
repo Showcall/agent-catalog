@@ -23,10 +23,100 @@ export type CardFetch =
   | { card: A2ACard; source: 'live' | 'stale' }
   | { card: null; source: 'unreachable' };
 
+export interface InterfaceDrift {
+  status: 'in-sync' | 'drift';
+  declaredSkillIds: string[];
+  liveSkillIds: string[];
+  declaredOnly: string[];
+  liveOnly: string[];
+}
+
 function setAnnotation(entity: Entity, key: string, value: string): void {
   entity.metadata.annotations = {
     ...(entity.metadata.annotations ?? {}),
     [`${ANNOTATION_PREFIX}/${key}`]: value,
+  };
+}
+
+function skillIds(skills: unknown[] | undefined): string[] {
+  return [
+    ...new Set(
+      (skills ?? []).flatMap(skill => {
+        if (!skill || typeof skill !== 'object') return [];
+        const id = (skill as Record<string, unknown>).id;
+        return typeof id === 'string' && id.trim() ? [id.trim()] : [];
+      }),
+    ),
+  ].sort();
+}
+
+/** Compare the declarative kagent skill IDs with a freshly fetched live card. */
+export function compareInterfaceSkills(
+  declaredSkills: unknown[] | undefined,
+  liveSkills: unknown[] | undefined,
+): InterfaceDrift | undefined {
+  const declaredSkillIds = skillIds(declaredSkills);
+  if (!declaredSkillIds.length) return undefined;
+
+  const liveSkillIds = skillIds(liveSkills);
+  const live = new Set(liveSkillIds);
+  const declared = new Set(declaredSkillIds);
+  const declaredOnly = declaredSkillIds.filter(id => !live.has(id));
+  const liveOnly = liveSkillIds.filter(id => !declared.has(id));
+
+  return {
+    status: declaredOnly.length || liveOnly.length ? 'drift' : 'in-sync',
+    declaredSkillIds,
+    liveSkillIds,
+    declaredOnly,
+    liveOnly,
+  };
+}
+
+function applyInterfaceDrift(
+  component: Entity,
+  agent: KagentAgent,
+  card: A2ACard,
+): void {
+  const drift = compareInterfaceSkills(
+    agent.spec?.declarative?.a2aConfig?.skills,
+    card.skills,
+  );
+  if (!drift) return;
+
+  setAnnotation(component, 'interface-status', drift.status);
+  if (drift.status === 'drift') {
+    const detail = [
+      drift.declaredOnly.length
+        ? `declared only: ${drift.declaredOnly.join(', ')}`
+        : '',
+      drift.liveOnly.length ? `live only: ${drift.liveOnly.join(', ')}` : '',
+    ]
+      .filter(Boolean)
+      .join('; ');
+    setAnnotation(component, 'interface-drift', detail);
+  }
+
+  const spec = component.spec ?? {};
+  const existingAgent = spec.agent;
+  const agentSpec =
+    existingAgent &&
+    typeof existingAgent === 'object' &&
+    !Array.isArray(existingAgent)
+      ? existingAgent
+      : {};
+  component.spec = {
+    ...spec,
+    agent: {
+      ...agentSpec,
+      interface: {
+        status: drift.status,
+        declaredSkillIds: drift.declaredSkillIds,
+        liveSkillIds: drift.liveSkillIds,
+        declaredOnly: drift.declaredOnly,
+        liveOnly: drift.liveOnly,
+      },
+    },
   };
 }
 
@@ -56,12 +146,21 @@ export function enrichAgentEntities(
   const synthesizedApi = crdEntities.find(e => e.kind === 'API');
 
   if (fetched.card) {
-    const api = a2aApiEntity(agent, opts, fetched.card, fetched.source, locationScheme);
+    const api = a2aApiEntity(
+      agent,
+      opts,
+      fetched.card,
+      fetched.source,
+      locationScheme,
+    );
     (component.spec as Record<string, unknown>).providesApis = [
       a2aApiName(agent, opts.clusterName),
     ];
     setAnnotation(component, 'card-source', fetched.source);
     setAnnotation(component, 'reachable', String(fetched.source === 'live'));
+    if (fetched.source === 'live') {
+      applyInterfaceDrift(component, agent, fetched.card);
+    }
     return [...nonApi, api];
   }
 
