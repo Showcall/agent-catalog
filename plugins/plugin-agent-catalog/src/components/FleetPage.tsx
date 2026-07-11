@@ -17,6 +17,8 @@ import { useApi } from '@backstage/core-plugin-api';
 import { catalogApiRef, EntityRefLink } from '@backstage/plugin-catalog-react';
 import { Chip } from '@material-ui/core';
 import { toRow, type AgentRow } from './rows';
+import { computeHealth, type HealthFinding } from './health';
+import { HealthSummary } from './HealthSummary';
 
 const columns: TableColumn<AgentRow>[] = [
   {
@@ -116,18 +118,27 @@ const columns: TableColumn<AgentRow>[] = [
 export const FleetPage = () => {
   const catalogApi = useApi(catalogApiRef);
   const [rows, setRows] = useState<AgentRow[] | undefined>();
+  const [findings, setFindings] = useState<HealthFinding[]>([]);
   const [error, setError] = useState<Error | undefined>();
 
   useEffect(() => {
-    catalogApi
-      .getEntities({
-        // agents + multi-agent teams + honest heuristic findings
+    Promise.all([
+      // agents + multi-agent teams + honest heuristic findings
+      catalogApi.getEntities({
         filter: {
           kind: 'Component',
           'spec.type': ['ai-agent', 'ai-agent-team', 'llm-workload'],
         },
+      }),
+      // gateway ledger summaries — for consumers matching no catalog entity
+      catalogApi.getEntities({
+        filter: { kind: 'Resource', 'spec.type': 'llm-gateway' },
+      }),
+    ])
+      .then(([agentRes, gatewayRes]) => {
+        setRows(agentRes.items.map(toRow));
+        setFindings(computeHealth(agentRes.items, gatewayRes.items));
       })
-      .then(res => setRows(res.items.map(toRow)))
       .catch(setError);
   }, [catalogApi]);
 
@@ -141,17 +152,22 @@ export const FleetPage = () => {
         {error && <ResponseErrorPanel error={error} />}
         {!rows && !error && <Progress />}
         {rows && (
-          <Table<AgentRow>
-            title={`Fleet (${rows.length})`}
-            options={{
-              search: true,
-              paging: false,
-              padding: 'dense',
-              columnsButton: true,
-            }}
-            columns={columns}
-            data={rows}
-          />
+          <>
+            <div style={{ marginBottom: 16 }}>
+              <HealthSummary findings={findings} total={rows.length} />
+            </div>
+            <Table<AgentRow>
+              title={`Fleet (${rows.length})`}
+              options={{
+                search: true,
+                paging: false,
+                padding: 'dense',
+                columnsButton: true,
+              }}
+              columns={columns}
+              data={rows}
+            />
+          </>
         )}
       </Content>
     </Page>
