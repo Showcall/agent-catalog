@@ -35,6 +35,8 @@ describe('AgentInfoCard', () => {
         'agentcatalog.io/runtime': 'kagent',
         'agentcatalog.io/discovery': 'crd',
         'agentcatalog.io/reachable': 'true',
+        'agentcatalog.io/source-status': 'available',
+        'agentcatalog.io/last-observed-at': '2026-07-11T12:00:00.000Z',
         'agentcatalog.io/card-source': 'live',
         'agentcatalog.io/interface-status': 'in-sync',
         'agentcatalog.io/usage-requests': '128',
@@ -47,9 +49,24 @@ describe('AgentInfoCard', () => {
     expect(screen.getByText('cluster: prod-west')).toBeInTheDocument();
     expect(screen.getByText('discovery: crd')).toBeInTheDocument();
     expect(screen.getByText('reachable')).toBeInTheDocument();
+    expect(screen.getByText('source: online')).toBeInTheDocument();
     expect(screen.getByText('card: live')).toBeInTheDocument();
     expect(screen.getByText('interface: in sync')).toBeInTheDocument();
     expect(screen.getByText('128')).toBeInTheDocument();
+  });
+
+  it('separates an unavailable source from an unreachable agent', async () => {
+    await renderCard(
+      agentEntity({
+        'agentcatalog.io/reachable': 'true',
+        'agentcatalog.io/source-status': 'unavailable',
+        'agentcatalog.io/source-last-success-at': '2026-07-11T12:00:00.000Z',
+      }),
+    );
+
+    expect(screen.getByText('reachable')).toBeInTheDocument();
+    expect(screen.getByText('source: offline')).toBeInTheDocument();
+    expect(screen.getByText(/Source is currently unavailable/)).toBeInTheDocument();
   });
 
   it('shows declared-to-live interface drift when the backend reports it', async () => {

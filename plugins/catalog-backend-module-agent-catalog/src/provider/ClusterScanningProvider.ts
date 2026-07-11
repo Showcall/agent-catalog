@@ -45,6 +45,7 @@ export abstract class ClusterScanningProvider implements EntityProvider {
         const entities = await this.collectCluster(cluster);
         this.clusterCache.recordSuccess(cluster.name, entities);
       } catch (e) {
+        this.clusterCache.recordFailure(cluster.name);
         this.logger.error(
           `${this.getProviderName()}: failed to scan cluster ${cluster.name}: ${e}`,
         );

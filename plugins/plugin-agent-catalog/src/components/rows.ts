@@ -16,7 +16,9 @@ export interface AgentRow {
   discovery: string;
   lifecycle: string;
   reachable: string;
+  sourceStatus: string;
   interfaceStatus: string;
+  lastObservedAt: string;
   lastActive: string;
   requests: number | undefined;
   window: string;
@@ -34,7 +36,9 @@ export function toRow(entity: Entity): AgentRow {
     discovery: ann[`${A}/discovery`] ?? '—',
     lifecycle: String(entity.spec?.lifecycle ?? '—'),
     reachable: ann[`${A}/reachable`] ?? '—',
+    sourceStatus: ann[`${A}/source-status`] ?? '—',
     interfaceStatus: ann[`${A}/interface-status`] ?? '—',
+    lastObservedAt: ann[`${A}/last-observed-at`] ?? '—',
     lastActive: ann[`${A}/last-active`] ?? '—',
     requests: requests !== undefined ? Number(requests) : undefined,
     window: ann[`${A}/usage-window`] ?? '',

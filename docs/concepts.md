@@ -52,11 +52,16 @@ agents.
 
 Flat, greppable facts live in `agentcatalog.io/*` annotations
 (cluster, namespace, model-config, `runtime`, `discovery`, `reachable`,
-`card-source`, `interface-status`); rich structured data rides in `spec.agent` for future
+`card-source`, `interface-status`, `last-observed-at`, `source-status`); rich structured data rides in `spec.agent` for future
 frontend use.
 
 For declarative kagent agents with a freshly fetched card, `interface-status`
 is `in-sync` or `drift` according to the declared and live A2A skill IDs.
+
+`reachable` describes whether an agent's card can answer. `source-status`
+describes whether its cluster source can currently be observed. They are
+deliberately separate: a preserved agent from an offline cluster is not a
+deleted or unreachable agent.
 
 ## Registries vs. catalogs — two different questions
 

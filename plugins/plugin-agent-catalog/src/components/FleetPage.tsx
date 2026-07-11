@@ -60,6 +60,23 @@ const columns: TableColumn<AgentRow>[] = [
       ),
   },
   {
+    title: 'Source',
+    field: 'sourceStatus',
+    render: row =>
+      row.sourceStatus === '—' ? (
+        <>—</>
+      ) : (
+        <Chip
+          label={row.sourceStatus === 'available' ? 'online' : 'offline'}
+          size="small"
+          style={{
+            backgroundColor:
+              row.sourceStatus === 'available' ? '#1db95433' : '#e5484d33',
+          }}
+        />
+      ),
+  },
+  {
     title: 'Interface',
     field: 'interfaceStatus',
     render: row =>
@@ -77,6 +94,7 @@ const columns: TableColumn<AgentRow>[] = [
       ),
   },
   { title: 'Last active', field: 'lastActive' },
+  { title: 'Last observed', field: 'lastObservedAt' },
   {
     title: 'Requests',
     field: 'requests',
