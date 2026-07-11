@@ -50,10 +50,10 @@ rest.
 | — | **Audit sweep**: probe unlabeled Services for cards. Designed in [ADR 0007](adr/0007-audit-sweep.md): entities directly (`discovery: probe`), trigger-first, off by default. Folds into heuristic discovery as one signal among several | ⬜ (design done) |
 | — | **Frontend v1**: `/agents` fleet page + Agent entity card (traction, status chips) | ✅ done |
 | — | **Headless / standalone inventory mode**: same collectors and normalized model, usable without Backstage for orgs whose agent runtimes and gateways live in separate clusters | 💡 future |
+| — | Drift scorecard: declared `a2aConfig` skills vs skills in the served card | ✅ done |
 | — | **Agent observation lifecycle**: `first-seen`, `last-seen`, source evidence, confidence, and source availability so an outage never reads as deletion | ⬜ |
 | — | **Compact agent event timeline**: discovery, reachability, served-card, ownership, dependency, and usage-state transitions | ⬜ |
 | — | **Agent health summary**: prioritized current-state findings for unowned, unreachable, stale, drifting, or unattributed agents | ⬜ |
-| — | Drift scorecard: declared `a2aConfig` skills vs skills in the served card | ⬜ |
 | — | Usage scorecard: cumulative tokens/requests per agent — below | ⬜ |
 
 ## Rung 3: the runtime landscape (verified July 2026)

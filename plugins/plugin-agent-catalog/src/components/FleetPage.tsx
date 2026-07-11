@@ -59,6 +59,23 @@ const columns: TableColumn<AgentRow>[] = [
         />
       ),
   },
+  {
+    title: 'Interface',
+    field: 'interfaceStatus',
+    render: row =>
+      row.interfaceStatus === '—' ? (
+        <>—</>
+      ) : (
+        <Chip
+          label={row.interfaceStatus === 'in-sync' ? 'in sync' : 'drift'}
+          size="small"
+          style={{
+            backgroundColor:
+              row.interfaceStatus === 'in-sync' ? '#1db95433' : '#f5a52433',
+          }}
+        />
+      ),
+  },
   { title: 'Last active', field: 'lastActive' },
   {
     title: 'Requests',

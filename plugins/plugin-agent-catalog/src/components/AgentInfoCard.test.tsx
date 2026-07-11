@@ -36,6 +36,7 @@ describe('AgentInfoCard', () => {
         'agentcatalog.io/discovery': 'crd',
         'agentcatalog.io/reachable': 'true',
         'agentcatalog.io/card-source': 'live',
+        'agentcatalog.io/interface-status': 'in-sync',
         'agentcatalog.io/usage-requests': '128',
         'agentcatalog.io/usage-window': '7d',
       }),
@@ -47,7 +48,21 @@ describe('AgentInfoCard', () => {
     expect(screen.getByText('discovery: crd')).toBeInTheDocument();
     expect(screen.getByText('reachable')).toBeInTheDocument();
     expect(screen.getByText('card: live')).toBeInTheDocument();
+    expect(screen.getByText('interface: in sync')).toBeInTheDocument();
     expect(screen.getByText('128')).toBeInTheDocument();
+  });
+
+  it('shows declared-to-live interface drift when the backend reports it', async () => {
+    await renderCard(
+      agentEntity({
+        'agentcatalog.io/interface-status': 'drift',
+        'agentcatalog.io/interface-drift': 'declared only: triage; live only: do-thing',
+      }),
+    );
+
+    expect(screen.getByText('interface: drift')).toBeInTheDocument();
+    expect(screen.getByText(/Declared interface differs from the live card/)).toBeInTheDocument();
+    expect(screen.getByText('declared only: triage; live only: do-thing')).toBeInTheDocument();
   });
 
   it('frames a heuristic finding differently and explains why it was flagged', async () => {

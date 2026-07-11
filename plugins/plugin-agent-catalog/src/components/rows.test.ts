@@ -23,6 +23,7 @@ describe('toRow', () => {
           'agentcatalog.io/runtime': 'kagent',
           'agentcatalog.io/discovery': 'crd',
           'agentcatalog.io/reachable': 'true',
+          'agentcatalog.io/interface-status': 'in-sync',
           'agentcatalog.io/last-active': '2026-07-01',
           'agentcatalog.io/usage-requests': '128',
           'agentcatalog.io/usage-window': '7d',
@@ -40,6 +41,7 @@ describe('toRow', () => {
       discovery: 'crd',
       lifecycle: 'production',
       reachable: 'true',
+      interfaceStatus: 'in-sync',
       lastActive: '2026-07-01',
       requests: 128,
       window: '7d',
@@ -59,6 +61,7 @@ describe('toRow', () => {
       discovery: '—',
       lifecycle: '—',
       reachable: '—',
+      interfaceStatus: '—',
       lastActive: '—',
       window: '',
     });
