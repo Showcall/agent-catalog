@@ -37,5 +37,6 @@ jobs:
           version: yarn version:packages
           title: 'chore: prepare release'
           commit: 'chore: prepare release'
+          createGithubReleases: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
