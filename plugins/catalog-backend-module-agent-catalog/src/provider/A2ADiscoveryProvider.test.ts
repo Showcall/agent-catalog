@@ -71,6 +71,7 @@ function baseConfig(
       schedule: { frequencyMinutes: 60 },
     },
     heuristics: { enabled: true, envNamePatterns: [], imagePatterns: [] },
+    sweep: { enabled: false, namespaceDenylist: [], maxPorts: 3 },
     ark: { enabled: true, group: 'ark.mckinsey.com', version: 'v1alpha1' },
     ...overrides,
   };

@@ -23,6 +23,13 @@ import { sanitizeCardPath } from './cardFetcher';
 
 export const DISCOVERY_LOCATION_SCHEME = 'a2a-discovery';
 
+/** The audit sweep gets its own location scheme so its full mutation and the
+ * label provider's cannot clobber each other (ADR 0003 / ADR 0007). */
+export const SWEEP_LOCATION_SCHEME = 'a2a-sweep';
+
+/** How a non-CRD agent Service was found: opt-in label (ADR 0006) vs. probe (ADR 0007). */
+export type DiscoverySource = 'label' | 'probe';
+
 /** Default opt-in selector (ADR 0006). */
 export const DEFAULT_A2A_LABEL_SELECTOR = 'agentcatalog.io/a2a=true';
 
@@ -91,11 +98,17 @@ export function pseudoAgentFor(
   };
 }
 
-/** Build the Component for a discovered (non-CRD) agent Service. */
+/**
+ * Build the Component for a discovered (non-CRD) agent Service. `source`
+ * distinguishes a label-registered agent (ADR 0006) from one the audit sweep
+ * probed (ADR 0007) — the latter carries `discovery: probe` and its own
+ * location scheme, so a probed entity reads as "found, not registered".
+ */
 export function discoveredServiceToComponent(
   svc: DiscoveredService,
   endpointsReady: boolean,
   opts: TransformOptions,
+  source: DiscoverySource = 'label',
 ): Entity {
   const ns = svc.metadata?.namespace ?? 'default';
   const rawName = svc.metadata?.name ?? 'unknown-service';
@@ -104,6 +117,12 @@ export function discoveredServiceToComponent(
   const lifecycleOverride =
     svc.metadata?.annotations?.[`${ANNOTATION_PREFIX}/lifecycle`] ??
     svc.metadata?.labels?.[`${ANNOTATION_PREFIX}/lifecycle`];
+  const scheme =
+    source === 'probe' ? SWEEP_LOCATION_SCHEME : DISCOVERY_LOCATION_SCHEME;
+  const defaultDescription =
+    source === 'probe'
+      ? 'A2A agent (found by audit sweep — serving a card, not registered)'
+      : 'A2A agent (discovered via labeled Service)';
 
   return {
     apiVersion: 'backstage.io/v1alpha1',
@@ -113,21 +132,18 @@ export function discoveredServiceToComponent(
       title: rawName,
       description:
         svc.metadata?.annotations?.[`${ANNOTATION_PREFIX}/description`] ??
-        'A2A agent (discovered via labeled Service)',
+        defaultDescription,
       annotations: {
-        ...locationOf(
-          opts.clusterName,
-          ns,
-          'Service',
-          rawName,
-          DISCOVERY_LOCATION_SCHEME,
-        ),
+        ...locationOf(opts.clusterName, ns, 'Service', rawName, scheme),
         [`${ANNOTATION_PREFIX}/runtime`]: runtime,
-        [`${ANNOTATION_PREFIX}/discovery`]: 'label',
+        [`${ANNOTATION_PREFIX}/discovery`]: source,
         [`${ANNOTATION_PREFIX}/cluster`]: opts.clusterName,
         [`${ANNOTATION_PREFIX}/namespace`]: ns,
       },
-      tags: ['ai-agent', 'a2a', 'discovered'],
+      tags:
+        source === 'probe'
+          ? ['ai-agent', 'a2a', 'discovered', 'shadow']
+          : ['ai-agent', 'a2a', 'discovered'],
     },
     spec: {
       type: AGENT_COMPONENT_TYPE,
@@ -139,7 +155,7 @@ export function discoveredServiceToComponent(
       // the incentive toward the golden path (ADR 0006).
       agent: {
         runtime,
-        discovery: 'label',
+        discovery: source,
         cluster: opts.clusterName,
         namespace: ns,
         service: rawName,

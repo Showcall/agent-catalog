@@ -54,7 +54,7 @@ packaging.
 
 ## Known-and-accepted for v0.1 (state in release notes)
 
-- Audit sweep designed, not implemented ([ADR 0007](adr/0007-audit-sweep.md)).
+- Audit sweep is opt-in and off by default ([ADR 0007](adr/0007-audit-sweep.md)).
 - Dapr Agents / Tier C not started ([roadmap](roadmap.md)).
 - Scaffolder output shows a raw `${{ steps.pr.output.remoteUrl }}` link
   (cosmetic; the PR is created correctly).
