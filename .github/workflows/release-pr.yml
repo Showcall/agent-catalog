@@ -1,0 +1,41 @@
+name: Release PR
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: release-pr
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-pr:
+    name: Create or update release PR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: yarn
+
+      - name: Install
+        run: yarn install --immutable
+
+      - name: Create release PR
+        uses: changesets/action@v1
+        with:
+          version: yarn version:packages
+          title: 'chore: prepare release'
+          commit: 'chore: prepare release'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

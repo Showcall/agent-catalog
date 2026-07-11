@@ -50,17 +50,24 @@ npmjs.com → **Packages** → the package → **Settings** → **Trusted Publis
 
 Repeat for both packages. No `NPM_TOKEN` secret is needed.
 
-## Cutting a release (every time, no token)
+## Cutting a release
 
-1. Bump `version` in **both** plugin `package.json` files (keep them in
-   lockstep), then `yarn install` to update `yarn.lock`.
-2. Move the `CHANGELOG.md` `Unreleased` entries under the new version.
-3. Commit, then tag and push — the tag must equal the package version:
-   ```bash
-   git tag v0.2.0 && git push origin v0.2.0
-   ```
-4. The **Release** workflow builds and publishes both packages via OIDC, with
-   provenance. Watch it under the repo's **Actions** tab.
+Add a changeset with each published-package change:
+
+    yarn changeset
+
+Choose patch for fixes and minor for new capabilities. The two public plugins
+are fixed together, so Changesets keeps their versions in lockstep.
+
+After the changeset reaches main, release-pr.yml opens or updates a release PR.
+Its version command bumps both packages and moves the root CHANGELOG.md
+Unreleased entries under the calculated version. Review and merge that PR, then
+tag and push the exact package version:
+
+    git tag v0.4.0 && git push origin v0.4.0
+
+The existing release.yml workflow then builds and publishes both packages via
+OIDC, with provenance. Watch it under the repo's Actions tab.
 
 Notes:
 
