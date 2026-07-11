@@ -1,0 +1,98 @@
+# A "shadow agent": a real A2A agent that nobody registered.
+#
+# It serves a valid agent card, but note what it is MISSING:
+#   - no `agentcatalog.io/a2a: "true"` label  -> label discovery skips it
+#   - no kagent/ARK CRD                        -> no runtime provider owns it
+#   - no owner annotation                      -> nobody has claimed it
+#   - it lives in its own namespace            -> not part of the "known" estate
+#
+# Label discovery and the CRD providers cannot see it. Only the audit sweep
+# (ADR 0007), which probes unlabeled Services for a card, will find it — and
+# catalog it with `agentcatalog.io/discovery: probe`.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shadow-team
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shadow-invoice-bot-source
+  namespace: shadow-team
+data:
+  server.js: |
+    const http = require('node:http');
+    const port = Number(process.env.PORT || 8080);
+    const card = {
+      name: 'shadow-invoice-bot',
+      description: 'Reconciles vendor invoices against purchase orders. Spun up at a hackathon; never registered.',
+      protocolVersion: '0.3',
+      preferredTransport: 'jsonrpc',
+      capabilities: { streaming: false, pushNotifications: false },
+      skills: [
+        {
+          id: 'reconcile-invoices',
+          name: 'Reconcile invoices',
+          description: 'Matches invoices to purchase orders and flags mismatches.',
+          tags: ['finance', 'automation'],
+        },
+      ],
+    };
+    const server = http.createServer((req, res) => {
+      if (req.url === '/.well-known/agent-card.json' || req.url === '/.well-known/agent.json') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify(card, null, 2));
+        return;
+      }
+      if (req.url === '/healthz') {
+        res.writeHead(200, { 'content-type': 'text/plain' });
+        res.end('ok');
+        return;
+      }
+      res.writeHead(404, { 'content-type': 'text/plain' });
+      res.end('not found');
+    });
+    server.listen(port, '0.0.0.0', () => process.stdout.write(`shadow agent listening on ${port}\n`));
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shadow-invoice-bot
+  namespace: shadow-team
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shadow-invoice-bot
+  template:
+    metadata:
+      labels:
+        app: shadow-invoice-bot
+    spec:
+      containers:
+        - name: agent
+          image: node:22-alpine
+          command: ['node', '/app/server.js']
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: source
+              mountPath: /app
+      volumes:
+        - name: source
+          configMap:
+            name: shadow-invoice-bot-source
+---
+# NOTE: no agentcatalog.io/a2a label, no owner annotation — deliberately.
+apiVersion: v1
+kind: Service
+metadata:
+  name: shadow-invoice-bot
+  namespace: shadow-team
+spec:
+  selector:
+    app: shadow-invoice-bot
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
