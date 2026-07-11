@@ -1,6 +1,6 @@
 # 7. Audit sweep: probe unlabeled Services for agent cards
 
-- Status: accepted (design settled 2026-07-04; implementation pending)
+- Status: accepted — implemented 2026-07-11 (`SweepDiscoveryProvider`)
 - Date: 2026-07-04
 
 ## Context

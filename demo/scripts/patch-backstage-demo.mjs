@@ -95,6 +95,15 @@ const clustersYaml = clusterContexts.length
   ? clusterContexts.map(ctx => `    - name: ${ctx}\n      context: ${ctx}`).join('\n')
   : '    - name: demo';
 
+// The audit sweep (ADR 0007) is off by default even in the demo — it is a
+// port-probing workload. Set DEMO_SWEEP=1 to enable it for the shadow-agent
+// playbook (demo/playbooks/shadow-agent). Recurs every minute so a freshly
+// planted shadow agent is discovered quickly.
+const sweepYaml =
+  process.env.DEMO_SWEEP === '1'
+    ? '  sweep:\n    enabled: true\n    scheduleMinutes: 1\n'
+    : '';
+
 const overlay = `app:
   title: Agent Catalog Demo
   baseUrl: http://localhost:${frontendPort}
@@ -154,7 +163,7 @@ agentCatalog:
     includeCost: false
     schedule:
       frequencyMinutes: 1
-  clusters:
+${sweepYaml}  clusters:
 ${clustersYaml}
 `;
 

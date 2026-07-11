@@ -137,6 +137,22 @@ The usage ledger should add:
 That is the intended “aha”: known agents, shadow workloads, and unattributed
 LLM usage all show up in one Backstage-native catalog.
 
+## Playbooks
+
+Once the demo is up, [`demo/playbooks/`](playbooks/) has short, self-contained
+scenarios that show off one capability end-to-end on top of the running demo —
+"watch this happen", not just a table. First up:
+
+```bash
+# find an agent nobody registered (audit sweep / ADR 0007):
+DEMO_SWEEP=1 ./demo/backstage.sh          # enable the sweep (off by default)
+./demo/playbooks/shadow-agent/run.sh      # plant a shadow agent, watch it get discovered
+./demo/playbooks/shadow-agent/cleanup.sh  # remove it
+```
+
+See [demo/playbooks/README.md](playbooks/README.md) for the list and how to add
+your own.
+
 ## Cleanup
 
 ```bash

@@ -13,7 +13,7 @@ ADR.
 | [0004](0004-owner-annotation-not-label.md) | Ownership rides in an annotation, not a label | accepted |
 | [0005](0005-entity-naming.md) | Entity names include the k8s namespace (collision fix, catalog + git layer) | accepted |
 | [0006](0006-a2a-label-discovery.md) | Runtime-agnostic agent discovery via labeled Services (rung 3, Tier A) | accepted |
-| [0007](0007-audit-sweep.md) | Audit sweep: probe unlabeled Services for agent cards (entities directly, trigger-first) | accepted (impl. pending) |
+| [0007](0007-audit-sweep.md) | Audit sweep: probe unlabeled Services for agent cards (entities directly, trigger-first) | accepted (implemented) |
 | [0008](0008-gateway-usage.md) | Traction from the LLM-gateway ledger (LiteLLM first; team rollups + per-agent via alias) | accepted |
 | [0009](0009-heuristic-discovery.md) | Heuristic discovery of LLM-consuming workloads (`llm-workload`, evidence annotations) | accepted |
 | [0010](0010-ark-and-provider-base.md) | Tier B begins: ARK ingestion (Teams as `ai-agent-team` Components) + shared provider base | accepted |

@@ -76,6 +76,36 @@ export interface Config {
     };
 
     /**
+     * Audit sweep (ADR 0007): probe *unlabeled* Services for an agent card to
+     * surface agents nobody registered ("shadow" agents). Off by default — it
+     * is a port-probing workload; tell your security team before enabling.
+     * A found agent is cataloged with `agentcatalog.io/discovery: probe`; an
+     * unlabeled Service with no card is ignored (not a finding).
+     */
+    sweep?: {
+      /** @default false */
+      enabled?: boolean;
+      /**
+       * Namespaces to skip, in addition to `excludeNamespaces`.
+       * System namespaces (`kube-system`, `kube-public`, and
+       * `kube-node-lease`) are always skipped.
+       * @default []
+       */
+      namespaceDenylist?: string[];
+      /**
+       * Maximum declared ports probed per Service (declared ports only).
+       * @default 3
+       */
+      maxPorts?: number;
+      /**
+       * Recurring cadence in minutes. When unset there is no recurring
+       * schedule: one supervised sweep runs shortly after enable, then it only
+       * re-runs on operator trigger or restart.
+       */
+      scheduleMinutes?: number;
+    };
+
+    /**
      * ARK (ark.mckinsey.com) Agent/Team/Model discovery.
      */
     ark?: {
