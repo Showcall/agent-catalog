@@ -10,6 +10,13 @@ changes.
 
 ### Added
 
+- **Fleet page polish + click-to-filter.** The `/agents` page leads with
+  summary tiles (agents, shadow, unreachable, unowned, runtimes) that are
+  clickable to filter the table; the "Needs attention" panel is collapsible and
+  each entity-backed finding filters the fleet to exactly the affected agents;
+  probe-discovered "shadow" agents get a ghost mark and a subtle row tint; and
+  the column chooser is now a clearly-labelled `Columns` menu. All current-state
+  and read-only — filtering the live view, not saved views or dashboards.
 - **Audit sweep — find agents nobody registered (ADR 0007).** A new
   `SweepDiscoveryProvider` lists every Service on a cluster, skips the ones
   that are already someone else's job (labeled `agentcatalog.io/a2a=true` →

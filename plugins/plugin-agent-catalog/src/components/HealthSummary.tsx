@@ -1,12 +1,19 @@
 /**
  * "Needs attention" panel above the fleet table. Renders the prioritized
- * findings from `computeHealth` — pure presentation, no data fetching, so it
- * stays easy to snapshot-test and reuse.
+ * findings from `computeHealth` — pure presentation, no data fetching.
+ *
+ * Collapsible, and each entity-backed finding is clickable: selecting it asks
+ * the fleet to filter down to exactly the affected agents. Findings with no
+ * catalog entities (e.g. unattributed gateway aliases) are shown but not
+ * clickable — there is no row to filter to.
  */
 
+import { useState } from 'react';
 import { InfoCard, EmptyState } from '@backstage/core-components';
 import { EntityRefLink } from '@backstage/plugin-catalog-react';
-import { Chip, Grid, Typography } from '@material-ui/core';
+import { Chip, Grid, IconButton, Typography } from '@material-ui/core';
+import ExpandMore from '@material-ui/icons/ExpandMore';
+import ExpandLess from '@material-ui/icons/ExpandLess';
 import type { HealthFinding, HealthSeverity } from './health';
 
 const SEVERITY_COLOR: Record<HealthSeverity, string> = {
@@ -15,7 +22,6 @@ const SEVERITY_COLOR: Record<HealthSeverity, string> = {
   info: '#8b8d98',
 };
 
-// How many affected subjects to list inline before collapsing to "+N more".
 const MAX_INLINE = 6;
 
 const SeverityDot = ({ severity }: { severity: HealthSeverity }) => (
@@ -33,28 +39,59 @@ const SeverityDot = ({ severity }: { severity: HealthSeverity }) => (
   />
 );
 
-const FindingRow = ({ finding }: { finding: HealthFinding }) => {
+const FindingRow = ({
+  finding,
+  active,
+  onSelect,
+}: {
+  finding: HealthFinding;
+  active: boolean;
+  onSelect?: (f: HealthFinding) => void;
+}) => {
   const inlineEntities = finding.entities.slice(0, MAX_INLINE);
   const inlineSubjects = finding.subjects.slice(
     0,
     Math.max(0, MAX_INLINE - inlineEntities.length),
   );
-  const shown = inlineEntities.length + inlineSubjects.length;
-  const overflow = finding.count - shown;
+  const overflow = finding.count - (inlineEntities.length + inlineSubjects.length);
+  const selectable = !!onSelect && finding.entities.length > 0;
+
+  const header = (
+    <div style={{ display: 'flex', alignItems: 'center' }}>
+      <SeverityDot severity={finding.severity} />
+      <Typography variant="subtitle2" component="span">
+        {finding.title}
+      </Typography>
+      <Chip size="small" label={finding.count} style={{ marginLeft: 8, height: 20 }} />
+    </div>
+  );
 
   return (
     <Grid item xs={12} data-testid={`finding-${finding.id}`}>
-      <div style={{ display: 'flex', alignItems: 'baseline' }}>
-        <SeverityDot severity={finding.severity} />
-        <Typography variant="subtitle2" component="span">
-          {finding.title}
-        </Typography>
-        <Chip
-          size="small"
-          label={finding.count}
-          style={{ marginLeft: 8, height: 20 }}
-        />
-      </div>
+      {selectable ? (
+        <button
+          type="button"
+          aria-pressed={active}
+          onClick={() => onSelect!(finding)}
+          title={`Filter the fleet to these ${finding.count}`}
+          style={{
+            display: 'block',
+            width: '100%',
+            textAlign: 'left',
+            font: 'inherit',
+            cursor: 'pointer',
+            padding: '2px 6px',
+            marginLeft: -6,
+            borderRadius: 6,
+            border: 'none',
+            background: active ? 'rgba(128,128,128,0.16)' : 'transparent',
+          }}
+        >
+          {header}
+        </button>
+      ) : (
+        header
+      )}
       <Typography
         variant="body2"
         color="textSecondary"
@@ -90,10 +127,16 @@ const FindingRow = ({ finding }: { finding: HealthFinding }) => {
 export const HealthSummary = ({
   findings,
   total,
+  activeFindingId,
+  onSelectFinding,
 }: {
   findings: HealthFinding[];
   total: number;
+  activeFindingId?: string;
+  onSelectFinding?: (f: HealthFinding) => void;
 }) => {
+  const [open, setOpen] = useState(true);
+
   if (!findings.length) {
     return (
       <InfoCard title="Needs attention">
@@ -110,18 +153,34 @@ export const HealthSummary = ({
     );
   }
 
+  const totalCount = findings.reduce((n, f) => n + f.count, 0);
   return (
     <InfoCard
       title="Needs attention"
-      subheader={`${findings.reduce((n, f) => n + f.count, 0)} across ${findings.length} ${
+      subheader={`${totalCount} across ${findings.length} ${
         findings.length === 1 ? 'category' : 'categories'
       }`}
+      action={
+        <IconButton
+          aria-label={open ? 'Collapse' : 'Expand'}
+          onClick={() => setOpen(o => !o)}
+        >
+          {open ? <ExpandLess /> : <ExpandMore />}
+        </IconButton>
+      }
     >
-      <Grid container spacing={1}>
-        {findings.map(finding => (
-          <FindingRow key={finding.id} finding={finding} />
-        ))}
-      </Grid>
+      {open && (
+        <Grid container spacing={1}>
+          {findings.map(finding => (
+            <FindingRow
+              key={finding.id}
+              finding={finding}
+              active={activeFindingId === finding.id}
+              onSelect={onSelectFinding}
+            />
+          ))}
+        </Grid>
+      )}
     </InfoCard>
   );
 };
