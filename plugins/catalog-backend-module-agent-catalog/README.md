@@ -13,9 +13,10 @@ This package discovers and catalogs:
 - ARK agents, teams, and models
 - arbitrary Kubernetes Services labeled as A2A agents
 - unlabeled workloads that exhibit configurable agent and LLM signals
+- optional audit-sweep discovery of unlabeled Services serving valid A2A cards
 - optional LiteLLM gateway usage and traction
 
-Agent Catalog is currently a **technical preview** (`0.1.x`). Package APIs and
+Agent Catalog is currently a **technical preview**. Package APIs and
 configuration may change before `1.0`.
 
 ## Install
@@ -64,6 +65,26 @@ included
 [read-only RBAC policy](https://github.com/Showcall/agent-catalog/blob/main/deploy/rbac.yaml)
 to the identity used by your Backstage backend; do not use an administrator
 kubeconfig.
+
+### Optional audit sweep
+
+The audit sweep probes unlabeled Services for valid A2A cards and emits
+findings with `agentcatalog.io/discovery: probe`. It is disabled by default
+because it performs bounded GET requests through the Kubernetes API server:
+
+```yaml
+agentCatalog:
+  sweep:
+    enabled: true
+    maxPorts: 3
+    scheduleMinutes: 60
+```
+
+System namespaces are skipped by default. Add `agentcatalog.io/a2a: "false"`
+to a Service when it should be explicitly suppressed. See
+[ADR 0007](https://github.com/Showcall/agent-catalog/blob/main/docs/adr/0007-audit-sweep.md)
+and the [shadow-agent demo playbook](https://github.com/Showcall/agent-catalog/blob/main/demo/playbooks/shadow-agent/README.md)
+for the operator workflow.
 
 Runtime discovery, live-card enrichment, heuristics, scheduling, and LiteLLM
 usage are configurable under `agentCatalog`. See the

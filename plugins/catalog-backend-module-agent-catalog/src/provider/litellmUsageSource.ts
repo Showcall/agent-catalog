@@ -1,8 +1,9 @@
 /**
  * LiteLLM ledger client (ADR 0008). Reads windowed per-consumer aggregates
  * from `/user/daily/activity` — chosen deliberately: it is an OSS endpoint
- * (the `/global/spend/report` family is enterprise-gated) and its
- * `breakdown.api_keys` entries carry `key_alias` + `team_id`, which is the
+ * (the `/global/spend/report` family is not available in every deployment)
+ * and its `breakdown.api_keys` entries carry `key_alias` + `team_id`, which
+ * is the
  * entire matching ladder in one call. Verified against a live proxy;
  * shapes vary by version, so everything here is defensive.
  */

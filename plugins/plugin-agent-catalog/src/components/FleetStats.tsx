@@ -1,6 +1,6 @@
 /**
  * Summary stat tiles above the fleet table. Current-state counts only (no
- * trends/charts — that stays enterprise). Tiles with a filter are clickable
+ * trends/charts — those remain future scope). Tiles with a filter are clickable
  * and toggle the fleet's active filter.
  */
 

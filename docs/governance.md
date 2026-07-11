@@ -10,7 +10,7 @@ third. Conflating them is how governance products overpromise — so we won't.
 |---|---|---|
 | **Version / drift sprawl** | Ten slightly-different copies of an agent because people tweak configs in place | **Largely solved.** One declared spec per environment in git; Argo `selfHeal` reverts out-of-band changes. The cluster is forced to match the repo. |
 | **Count sprawl** | Agent #40 gets merged and nobody remembers #12 | **Converted, not prevented.** Every agent that exists is in the catalog with an owner, model, and tool dependencies. Proliferation becomes a *queryable list you can prune* — see scorecards below. Pruning remains an org discipline. |
-| **Shadow / runtime sprawl** | Agents on laptops, in Lambdas, embedded in apps; sub-agents spawned at runtime | **Partially covered.** Any on-cluster agent — whatever framework — is one Service label away from being cataloged ([ADR 0006](adr/0006-a2a-label-discovery.md)), so "we don't run kagent" is no longer an excuse. What remains dark: *unlabeled* on-cluster agents (heuristic discovery + the audit sweep on the [roadmap](roadmap.md) hunt these), and anything off-cluster or spawned at runtime — for those, an org **LLM gateway** is the honest instrument: usage that can't be attributed to any cataloged agent is itself the shadow-agent signal. |
+| **Shadow / runtime sprawl** | Agents on laptops, in Lambdas, embedded in apps; sub-agents spawned at runtime | **Partially covered.** Any on-cluster agent — whatever framework — is one Service label away from being cataloged ([ADR 0006](adr/0006-a2a-label-discovery.md)), so "we don't run kagent" is no longer an excuse. Unlabeled on-cluster agents are covered by heuristic discovery and the opt-in audit sweep; anything off-cluster or spawned at runtime remains dark — for those, an org **LLM gateway** is the honest instrument: usage that can't be attributed to any cataloged agent is itself the shadow-agent signal. |
 
 ## Lifecycle: every transition is a PR
 
@@ -60,7 +60,7 @@ payoff of using well-known kinds ([ADR 0002](adr/0002-component-not-custom-kind.
 | **Guessing their interface** | `agentcatalog.io/card-source=synthesized\|stale` — catalog can't confirm what they serve |
 | **Deprecated model** | Resources of type `llm-model-config` whose `agentcatalog.io/model` is on your sunset list; walk `dependsOn` back to affected agents |
 | **Over-privileged** | Agents whose `dependsOn` includes tool servers outside an allowlist |
-| **Discovered but unclaimed** | `agentcatalog.io/discovery=label` with owner still the `defaultOwner` — found, but nobody's name is on it |
+| **Discovered but unclaimed** | `agentcatalog.io/discovery=label\|probe\|heuristic` with owner still the `defaultOwner` — found, but nobody's name is on it |
 | **Drift (roadmap)** | Declared `a2aConfig` skills ≠ skills in the live card |
 
 ## What genuine hardening adds (beyond this MVP)
