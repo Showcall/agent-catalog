@@ -11,9 +11,10 @@ This package adds:
 
 - an **Agents** sidebar item and `/agents` fleet page
 - owner, runtime, discovery source, reachability, and LLM-gateway usage columns
+- health findings, click-to-filter triage, shadow markers, and a column chooser
 - an Agent status and traction card on supported catalog entity pages
 
-Agent Catalog is currently a **technical preview** (`0.1.x`). Package APIs and
+Agent Catalog is currently a **technical preview**. Package APIs and
 configuration may change before `1.0`.
 
 ## Compatibility

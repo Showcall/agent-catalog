@@ -4,8 +4,9 @@
 - Date: 2026-07-04
 
 > **Implementation notes** (verified against a live LiteLLM proxy):
-> `/global/spend/report` turned out to be enterprise-gated; the
-> implementation reads the OSS `/user/daily/activity` endpoint instead,
+> `/global/spend/report` was not available in the supported LiteLLM
+> deployment; the implementation reads the OSS
+> `/user/daily/activity` endpoint instead,
 > whose `breakdown.api_keys` carries `key_alias` + `team_id` — the whole
 > matching ladder in one call (paginated via `has_more`; `/team/list`
 > resolves team aliases, best-effort). Annotations shipped as

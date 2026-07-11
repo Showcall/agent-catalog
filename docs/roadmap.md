@@ -6,32 +6,23 @@ each new runtime below is a catalog **source**, not a rival.
 
 ## Current priorities
 
-Ordered against the reference adopter scenario — an org with an established
-Backstage, agents mostly on Kubernetes plus some hosted platforms, adoption
-happening in *vastly different ways*, and an **LLM gateway/proxy** already
-in the call path. The platform questions, in priority order: what is
-deployed → who deployed it → on what runtime → **what has traction vs.
-what is noise**.
+The core OSS path now answers the first operational questions: what is
+deployed, who owns it, where it runs, whether it is answering, and whether
+anyone is using it. The next priorities deepen coverage without turning the
+catalog into a runtime, gateway, or security product:
 
-1. **LLM-gateway usage integration.** The gateway's ledger has
-   per-consumer requests/tokens/cost — traction data for every agent
-   *regardless of runtime or protocol*. Join it onto entities
-   (`last-active`, request/token counts) and, in reverse, surface gateway
-   consumers matching no catalog entity: **discovery by consumption** —
-   the gateway sees what the cluster can't (including off-cluster and
-   local agents, as unattributed usage).
-2. ✅ **Heuristic discovery of LLM-consuming workloads.** Much of real-world
-   agent adoption speaks no A2A and has no CRD — a script in a cron job, a
-   FastAPI app calling a provider. Detect by pod-spec heuristics
-   (provider-key-shaped env *names*, framework image patterns). Catches
-   the protocol-less chaos; card probing ([ADR 0007](adr/0007-audit-sweep.md))
-   becomes one heuristic among several.
-3. **Namespace→team ownership fallback.** Backstage already holds the org
-   graph; map namespaces to owning Groups so "who deployed it" doesn't
-   wait on annotation adoption (extends the [ADR 0004](adr/0004-owner-annotation-not-label.md)
-   ladder).
-4. **Tier C** (hosted platforms + registries as sources) — after the
-   on-cluster story is complete.
+1. **Namespace-to-team ownership fallback.** Backstage already holds the
+   organization graph; map namespaces to owning Groups so ownership does not
+   wait on annotation adoption. This extends the [ADR 0004](adr/0004-owner-annotation-not-label.md)
+   ladder.
+2. **Additional runtime sources.** Add focused providers for runtimes that
+   expose a useful Kubernetes-native identity surface, starting with Dapr
+   Agents.
+3. **Multi-cluster inventory mode.** Separate agent-runtime clusters from
+   gateway clusters while keeping one normalized catalog identity.
+4. **Observation history and usage scorecards.** Add a compact event timeline
+   and more useful cumulative usage views without turning the catalog into a
+   logs or traces store.
 
 Out of scope, permanently: *observing* local/laptop agents. A catalog
 cannot see them and shouldn't pretend to — their metabolism shows up as
@@ -48,20 +39,20 @@ rest.
 | — | **LLM-gateway usage integration** (traction vs. noise + discovery by consumption) — [ADR 0008](adr/0008-gateway-usage.md) | ✅ done |
 | — | **Heuristic discovery** of LLM-consuming workloads — [ADR 0009](adr/0009-heuristic-discovery.md) | ✅ done |
 | — | **Audit sweep**: probe unlabeled Services for cards. [ADR 0007](adr/0007-audit-sweep.md): entities directly (`discovery: probe`), trigger-first, off by default. `SweepDiscoveryProvider` — the Tier B scout also finds card-serving agents on runtimes with no CRD provider yet | ✅ done |
-| — | **Frontend v1**: `/agents` fleet page + Agent entity card (traction, status chips) | ✅ done |
-| — | **Headless / standalone inventory mode**: same collectors and normalized model, usable without Backstage for orgs whose agent runtimes and gateways live in separate clusters | 💡 future |
+| — | **Frontend v1 + fleet triage**: `/agents` fleet page, Agent entity card, health summary, click-to-filter, shadow markers, and column chooser | ✅ done |
+| — | **Multi-cluster inventory mode**: same collectors and normalized model, usable when agent runtimes and gateways live in separate clusters | 💡 future |
 | — | **Observation lifecycle v0**: last observed time and explicit source availability during cluster outages | ✅ done |
 | — | Drift scorecard: declared `a2aConfig` skills vs skills in the served card | ✅ done |
-| — | **Agent observation lifecycle**: `first-seen`, `last-seen`, source evidence, confidence, and source availability so an outage never reads as deletion | ⬜ |
+| — | **Observation history**: `first-seen`, `last-seen`, source evidence, confidence, and historical state transitions | ⬜ |
 | — | **Compact agent event timeline**: discovery, reachability, served-card, ownership, dependency, and usage-state transitions | ⬜ |
-| — | **Agent health summary**: prioritized current-state findings for unowned, unreachable, stale, drifting, or unattributed agents | ⬜ |
+| — | **Agent health summary**: prioritized current-state findings for unowned, unreachable, stale, drifting, or unattributed agents | ✅ done |
 | — | Usage scorecard: cumulative tokens/requests per agent — below | ⬜ |
 
 ## Rung 3: the runtime landscape (verified July 2026)
 
-A2A reached v1.0 under the Linux Foundation with 150+ production
-organizations and native support in all three major clouds. **The agent
-card is the universal join point** — which is exactly the bet
+A2A is an open standard governed by the Linux Foundation, with broad
+framework and cloud adoption. **The agent card is the universal join point** —
+which is exactly the bet
 [ADR 0001](adr/0001-agent-metadata-sources.md) made. Discovery strategy
 follows from that, in three tiers:
 
@@ -100,7 +91,7 @@ per-source providers with distinct locationKeys is the scaling shape anyway).
 | Azure AI Foundry / Copilot Studio | runtime | Copilot Studio A2A GA'd April 2026. |
 | Google Vertex AI Agent Engine / ADK | runtime | ADK agents serve cards wherever deployed. |
 | AWS Agent Registry | registry | Registered agents (+ their cards) ingested as entities, marked by origin. |
-| Gemini Enterprise agent registrations / ARD | registry | Google's registration surface and discovery spec — same treatment. |
+| Gemini agent registrations / ARD | registry | Google's registration surface and discovery spec — same treatment. |
 | A2A-native registries (spec proposal in progress) | registry | When the A2A registry API standardizes, one provider covers all conformant registries. |
 
 Registries deserve their own row-kind because of what's coming: **one
@@ -113,10 +104,10 @@ prove the multi-source model. Registry-sourced entities will carry
 `discovery: registry` so publication claims stay distinguishable from
 observed runtime truth.
 
-## Future: headless / standalone inventory mode
+## Future: multi-cluster inventory mode
 
-Backstage is the blessed OSS surface today, but it should not become the
-only possible place the inventory can exist. A realistic enterprise topology
+Backstage is the primary OSS surface today, but it should not become the
+only possible place the inventory can exist. A realistic deployment topology
 often looks like:
 
 - one or more Kubernetes clusters running agents and agent runtimes;
@@ -134,7 +125,7 @@ The long-term shape is to separate the product into three layers:
 3. **Surfaces** consume that inventory: the Backstage plugin first, but later
    a CLI, JSON/API export, or static report.
 
-That lets an org configure an agent-runtime cluster and a separate gateway
+That lets an organization configure an agent-runtime cluster and a separate gateway
 cluster without making Backstage the source of truth:
 
 ```yaml
@@ -191,10 +182,10 @@ Build a compact timeline from those observations. Useful initial events:
 - owner, runtime, model, tool, or dependency changed;
 - gateway usage appeared, stopped, or remained unattributed.
 
-The `/agents` page should grow a small health summary that prioritizes facts
-an owner can act on: unowned agents, unreachable cards, stale observations,
+The `/agents` page now has a small health summary that prioritizes facts an
+owner can act on: unowned agents, unreachable cards, stale observations,
 configuration/card drift, no traction after deployment, and gateway consumers
-with no catalog identity. It should also link an agent to its workload,
+with no catalog identity. Future work should link an agent to its workload,
 Service, runtime source, card, model, tools, gateway evidence, and existing
 external dashboards or traces when configured.
 

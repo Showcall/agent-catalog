@@ -81,10 +81,10 @@ flaw, it's what a registry *is*. The catalog's audit sweep
 ([ADR 0007](adr/0007-audit-sweep.md)) exists precisely for that gap, and
 `reachable: false` is a fact no registry entry carries.
 
-The two compose rather than compete: an org's registries are natural
+The two compose rather than compete: an organization's registries are natural
 **sources** for this catalog ([roadmap](roadmap.md), Tier C) — as
-enterprises accumulate one registry per cloud, the org-wide observation
-layer that reads *across* them is exactly the role a portal catalog plays.
+organizations accumulate one registry per cloud, the org-wide observation
+layer that reads *across* them is exactly the role a catalog plays.
 
 ## Ownership, in one paragraph
 

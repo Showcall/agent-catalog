@@ -34,13 +34,16 @@ questions for services. This plugin makes it answer them for agents.
   deprecated models, over-privileged tool access — all standard catalog
   queries ([governance.md](docs/governance.md)).
 - **A fleet view.** The `/agents` page: every agent across all sources with
-  owner, runtime, reachability, and traction in one sortable table — plus an
-  Agent card on each entity page.
+  owner, runtime, reachability, traction, health findings, and configurable
+  columns in one sortable table — plus an Agent card on each entity page.
+- **Opt-in shadow discovery.** The audit sweep probes unlabeled Services for
+  valid A2A cards and surfaces agents nobody registered, with explicit
+  suppression and bounded probing controls.
 
 ## Compatibility
 
-This is a **technical preview** (v0.1.x). While on the `0.x` line, config keys
-and package APIs may still change.
+This is a **technical preview**. While on the `0.x` line, config keys and
+package APIs may still change.
 
 | Requirement | Supported |
 |---|---|
@@ -244,10 +247,10 @@ New to agents, A2A, or MCP? Start with the primer.
   successful sync; transient cluster failures keep the last successful
   per-cluster snapshot so outages do not look like mass deletions
   ([ADR 0003](docs/adr/0003-full-mutation-per-refresh.md)).
-- **Frontend v1 shipped**: an `/agents` fleet page (owner, runtime,
-  discovery, reachable, last-active, requests) and an Agent card on every
-  agent's entity page. Future: card/skill viewer, fleet filters, the
-  gateway Resource page.
+- **Frontend v1 shipped**: an `/agents` fleet page with health findings,
+  click-to-filter triage, shadow markers, and configurable columns, plus an
+  Agent card on every agent's entity page. Future: card/skill viewer, event
+  timeline, and richer usage scorecards.
 - **Scaffolder PR flow assumes GitHub**; swap the publish action for
   GitLab etc. as needed.
 
