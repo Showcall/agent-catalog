@@ -27,12 +27,15 @@
     "lint": "backstage-cli repo lint",
     "test": "backstage-cli repo test",
     "test:all": "backstage-cli repo test --coverage",
+    "changeset": "changeset",
+    "version:packages": "node scripts/version-packages.mjs",
     "clean": "backstage-cli repo clean",
     "prettier:check": "prettier --check ."
   },
   "devDependencies": {
     "@backstage/cli": "^0.36.3",
     "@backstage/cli-defaults": "^0.1.3",
+    "@changesets/cli": "^2.31.0",
     "@types/jest": "^29.5.0",
     "@types/node": "^20.0.0",
     "jest": "^29.7.0",
