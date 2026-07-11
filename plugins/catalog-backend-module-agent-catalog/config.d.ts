@@ -87,6 +87,8 @@ export interface Config {
       enabled?: boolean;
       /**
        * Namespaces to skip, in addition to `excludeNamespaces`.
+       * System namespaces (`kube-system`, `kube-public`, and
+       * `kube-node-lease`) are always skipped.
        * @default []
        */
       namespaceDenylist?: string[];

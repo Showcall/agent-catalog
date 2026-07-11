@@ -42,6 +42,11 @@ import type { AgentCatalogConfig, ClusterConfig, DiscoveredService } from './typ
 import type { UsageService } from './UsageService';
 
 const A2A_LABEL = `${ANNOTATION_PREFIX}/a2a`;
+const DEFAULT_SWEEP_NAMESPACE_DENYLIST = [
+  'kube-system',
+  'kube-public',
+  'kube-node-lease',
+];
 
 export class SweepDiscoveryProvider extends ClusterScanningProvider {
   constructor(
@@ -82,7 +87,15 @@ export class SweepDiscoveryProvider extends ClusterScanningProvider {
     const declared = (svc.spec?.ports ?? [])
       .map(p => p.port)
       .filter((p): p is number => typeof p === 'number');
-    const ordered = [discoveredCardPort(svc), ...declared];
+    if (!declared.length) return [];
+
+    // Keep the sweep bounded to ports Kubernetes declares on the Service. The
+    // shared transform defaults an absent port to 8080 for catalog display,
+    // but that fallback must never become a probe target.
+    const preferred = discoveredCardPort(svc);
+    const ordered = [preferred, ...declared].filter(port =>
+      declared.includes(port),
+    );
     return [...new Set(ordered)].slice(0, Math.max(1, maxPorts));
   }
 
@@ -91,6 +104,7 @@ export class SweepDiscoveryProvider extends ClusterScanningProvider {
     const core = kc.makeApiClient(CoreV1Api);
     const cfg = this.config.sweep;
     const exclude = new Set([
+      ...DEFAULT_SWEEP_NAMESPACE_DENYLIST,
       ...(this.config.excludeNamespaces ?? []),
       ...(cfg.namespaceDenylist ?? []),
     ]);

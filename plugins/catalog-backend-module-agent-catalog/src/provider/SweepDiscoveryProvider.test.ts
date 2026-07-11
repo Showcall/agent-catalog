@@ -165,6 +165,7 @@ describe('SweepDiscoveryProvider', () => {
       items: [
         service('labeled', { labels: { [`${A}/a2a`]: 'true' } }),
         service('suppressed', { labels: { [`${A}/a2a`]: 'false' } }),
+        service('system-service', { namespace: 'kube-system' }),
         service('claimed', {
           ownerReferences: [{ apiVersion: 'kagent.dev/v1alpha2', kind: 'Agent' }],
         }),
@@ -181,7 +182,22 @@ describe('SweepDiscoveryProvider', () => {
     expect(found).toEqual(['shadow']);
     expect(found).not.toContain('labeled');
     expect(found).not.toContain('suppressed');
+    expect(found).not.toContain('system-service');
     expect(found).not.toContain('claimed');
+  });
+
+  it('does not probe a Service with no declared ports', async () => {
+    mockSvcList.mockResolvedValueOnce({
+      items: [service('portless', { ports: [] })],
+    });
+
+    const provider = new SweepDiscoveryProvider(baseConfig(), logger);
+    const conn = makeConnection();
+    await provider.connect(conn);
+    await provider.refresh();
+
+    expect(mockProxy).not.toHaveBeenCalled();
+    expect(lastMutation(conn).entities).toEqual([]);
   });
 
   it('stays silent on an unlabeled Service that serves no card', async () => {
