@@ -71,6 +71,18 @@ Kubernetes context. ARK can be added as an optional second controller.
 Once Backstage starts, kagent demo agents appear in the catalog within one
 sync cycle, tagged `ai-agent`, with owners and model/tool dependencies.
 
+### What the demo looks like
+
+The fleet view brings agents from multiple runtimes, clusters, and discovery
+paths into one sortable catalog:
+
+![Agent Catalog fleet view](docs/screenshots/agents-fleet-wide.png)
+
+Each discovered agent is also a first-class Backstage Component with runtime,
+cluster, reachability, lifecycle, and usage context:
+
+![Agent Catalog agent detail](docs/screenshots/agent-card.png)
+
 For real adoption into an existing Backstage app:
 
 1. Copy the plugins into your Backstage repo.
