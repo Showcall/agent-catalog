@@ -231,6 +231,8 @@ New to agents, A2A, or MCP? Start with the primer.
 - [architecture.md](docs/architecture.md) — the closed loop; why the catalog is never in the deploy path
 - [governance.md](docs/governance.md) — the three kinds of agent sprawl and what this actually solves
 - [roadmap.md](docs/roadmap.md) — supported runtimes, discovery tiers, what's deliberately out of scope
+- [CONTRIBUTING.md](CONTRIBUTING.md) — development setup and pull request guide
+- [SECURITY.md](SECURITY.md) — private vulnerability reporting
 - [docs/adr/](docs/adr/README.md) — significant decisions recorded as
   Architecture Decision Records, the same practice
   [Backstage itself follows](https://backstage.io/docs/architecture-decisions/):
