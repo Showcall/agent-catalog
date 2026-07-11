@@ -15,6 +15,7 @@ import type { Config } from '@backstage/config';
 import { KagentEntityProvider } from './provider/KagentEntityProvider';
 import { ArkEntityProvider } from './provider/ArkEntityProvider';
 import { A2ADiscoveryProvider } from './provider/A2ADiscoveryProvider';
+import { SweepDiscoveryProvider } from './provider/SweepDiscoveryProvider';
 import { HeuristicDiscoveryProvider } from './provider/HeuristicDiscoveryProvider';
 import {
   DEFAULT_ENV_NAME_PATTERNS,
@@ -63,6 +64,13 @@ export function readAgentCatalogConfig(config: Config): AgentCatalogConfig {
         { group: 'kagent.dev', kind: 'Agent' },
         { group: 'ark.mckinsey.com', kind: 'Agent' },
       ],
+    },
+    sweep: {
+      enabled: root.getOptionalBoolean('sweep.enabled') ?? false,
+      namespaceDenylist:
+        root.getOptionalStringArray('sweep.namespaceDenylist') ?? [],
+      maxPorts: root.getOptionalNumber('sweep.maxPorts') ?? 3,
+      scheduleMinutes: root.getOptionalNumber('sweep.scheduleMinutes'),
     },
     ark: {
       enabled: root.getOptionalBoolean('ark.enabled') ?? true,
@@ -181,6 +189,29 @@ export const catalogModuleAgentCatalog = createBackendModule({
             initialDelay: { seconds: 15 },
             fn: async () => {
               await discovery.refresh();
+            },
+          });
+        }
+
+        if (cfg.sweep.enabled) {
+          const sweep = new SweepDiscoveryProvider(cfg, logger, usage);
+          catalog.addEntityProvider(sweep);
+
+          // ADR 0007: off by default (guarded above) and *no default recurring
+          // schedule*. With no scheduleMinutes, the cadence is effectively
+          // manual — one supervised sweep runs ~30s after startup, then it only
+          // re-runs on operator trigger (the task stays triggerable by id) or
+          // restart. Set sweep.scheduleMinutes to opt into a recurring cadence.
+          const MANUAL_ONLY_MINUTES = 60 * 24 * 365;
+          await scheduler.scheduleTask({
+            id: 'agent-catalog-sweep-refresh',
+            frequency: {
+              minutes: cfg.sweep.scheduleMinutes ?? MANUAL_ONLY_MINUTES,
+            },
+            timeout: { minutes: cfg.schedule.timeoutMinutes },
+            initialDelay: { seconds: 30 },
+            fn: async () => {
+              await sweep.refresh();
             },
           });
         }

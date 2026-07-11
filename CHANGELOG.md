@@ -17,6 +17,20 @@ changes.
   probe-discovered "shadow" agents get a ghost mark and a subtle row tint; and
   the column chooser is now a clearly-labelled `Columns` menu. All current-state
   and read-only — filtering the live view, not saved views or dashboards.
+- **Audit sweep — find agents nobody registered (ADR 0007).** A new
+  `SweepDiscoveryProvider` lists every Service on a cluster, skips the ones
+  that are already someone else's job (labeled `agentcatalog.io/a2a=true` →
+  Tier A; owned by a runtime CR; suppressed `a2a=false`), and probes the rest
+  for a live A2A card — GET-only, well-known paths, each Service's *declared*
+  ports (capped), through the kube-apiserver proxy. A card-serving Service is
+  cataloged with `agentcatalog.io/discovery: probe` (and a `shadow` tag); an
+  unlabeled Service with no card is ignored, not flagged. **Off by default**
+  (`agentCatalog.sweep.enabled`) — it is a port-probing workload, so tell your
+  security team before enabling; there is no default schedule (one supervised
+  run on enable, recurring only via `sweep.scheduleMinutes`). Its own
+  `locationKey`, so it never clobbers labeled discovery. Doubles as a Tier B
+  scout: agents on runtimes with no CRD provider yet still show up if they
+  serve a card.
 - **Fleet health summary — "Needs attention".** The `/agents` page now leads
   with a prioritized, severity-ranked list of findings an owner can act on,
   derived entirely from signals already collected: unreachable agents (their
