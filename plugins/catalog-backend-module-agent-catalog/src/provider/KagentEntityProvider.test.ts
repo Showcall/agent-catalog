@@ -195,6 +195,29 @@ describe('KagentEntityProvider', () => {
     expect(logger.error).toHaveBeenCalled();
   });
 
+  it('marks the prior snapshot source unavailable when a later scan fails', async () => {
+    mockList
+      .mockResolvedValueOnce({ items: [agent('triage')] })
+      .mockResolvedValueOnce({ items: [] })
+      .mockRejectedValueOnce(new Error('api down'));
+
+    const provider = new KagentEntityProvider(baseConfig(), logger);
+    const conn = makeConnection();
+    await provider.connect(conn);
+    await provider.refresh();
+    await provider.refresh();
+
+    const component = lastMutation(conn).entities.find(
+      d => d.entity.kind === 'Component',
+    )!.entity;
+    expect(component.metadata.annotations?.['agentcatalog.io/source-status']).toBe(
+      'unavailable',
+    );
+    expect(
+      component.metadata.annotations?.['agentcatalog.io/last-observed-at'],
+    ).toBeDefined();
+  });
+
   it('still emits agents when only the modelconfig list fails', async () => {
     mockList
       .mockResolvedValueOnce({ items: [agent('triage')] })

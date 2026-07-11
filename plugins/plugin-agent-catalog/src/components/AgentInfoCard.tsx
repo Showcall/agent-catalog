@@ -33,6 +33,9 @@ export const AgentInfoCard = () => {
   const window = ann[`${A}/usage-window`] ?? '';
   const lastActive = ann[`${A}/last-active`];
   const reachable = ann[`${A}/reachable`];
+  const sourceStatus = ann[`${A}/source-status`];
+  const lastObservedAt = ann[`${A}/last-observed-at`];
+  const sourceLastSuccessAt = ann[`${A}/source-last-success-at`];
   const cardSource = ann[`${A}/card-source`];
   const interfaceStatus = ann[`${A}/interface-status`];
   const interfaceDrift = ann[`${A}/interface-drift`];
@@ -62,6 +65,16 @@ export const AgentInfoCard = () => {
               }}
             />
           )}
+          {sourceStatus && (
+            <Chip
+              size="small"
+              label={sourceStatus === 'available' ? 'source: online' : 'source: offline'}
+              style={{
+                backgroundColor:
+                  sourceStatus === 'available' ? '#1db95433' : '#e5484d33',
+              }}
+            />
+          )}
           {cardSource && <Chip size="small" variant="outlined" label={`card: ${cardSource}`} />}
           {interfaceStatus && (
             <Chip
@@ -78,7 +91,16 @@ export const AgentInfoCard = () => {
         <Stat label={`Requests${window ? ` / ${window}` : ''}`} value={requests ?? '—'} />
         <Stat label="Tokens" value={tokens ?? '—'} />
         <Stat label="Last active" value={lastActive ?? '—'} />
+        <Stat label="Last observed" value={lastObservedAt ?? '—'} />
         {cost && <Stat label={`Cost / ${window}`} value={`$${cost}`} />}
+
+        {sourceStatus === 'unavailable' && (
+          <Grid item xs={12}>
+            <Typography variant="body2" color="textSecondary">
+              Source is currently unavailable. Last successful observation: <code>{sourceLastSuccessAt ?? 'unknown'}</code>.
+            </Typography>
+          </Grid>
+        )}
 
         {signals && (
           <Grid item xs={12}>

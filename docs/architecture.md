@@ -54,7 +54,7 @@ and a fragile system. This design keeps the catalog a pull-based observer:
 | Backstage | Agents keep shipping via git + Argo; catalog catches up later |
 | Argo CD | Merges queue up; running agents unaffected; catalog stays accurate about *reality* |
 | An agent pod | Entity stays, flagged `reachable: false` — a governance signal, not a blind spot |
-| A whole cluster | Its last successful snapshot is served until it lists successfully again — an outage never looks like a mass deletion ([ADR 0003](adr/0003-full-mutation-per-refresh.md)) |
+| A whole cluster | Its last successful snapshot is served until it lists successfully again, marked `source-status: unavailable` with its last successful observation — an outage never looks like a mass deletion ([ADR 0003](adr/0003-full-mutation-per-refresh.md)) |
 
 ## Eventual consistency, by design
 

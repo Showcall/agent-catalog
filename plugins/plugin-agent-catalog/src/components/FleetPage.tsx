@@ -40,6 +40,7 @@ const columns: TableColumn<AgentRow>[] = [
   {
     title: 'Discovery',
     field: 'discovery',
+    hidden: true,
     render: row => <Chip label={row.discovery} size="small" variant="outlined" />,
   },
   { title: 'Lifecycle', field: 'lifecycle' },
@@ -60,8 +61,26 @@ const columns: TableColumn<AgentRow>[] = [
       ),
   },
   {
+    title: 'Source',
+    field: 'sourceStatus',
+    render: row =>
+      row.sourceStatus === '—' ? (
+        <>—</>
+      ) : (
+        <Chip
+          label={row.sourceStatus === 'available' ? 'online' : 'offline'}
+          size="small"
+          style={{
+            backgroundColor:
+              row.sourceStatus === 'available' ? '#1db95433' : '#e5484d33',
+          }}
+        />
+      ),
+  },
+  {
     title: 'Interface',
     field: 'interfaceStatus',
+    hidden: true,
     render: row =>
       row.interfaceStatus === '—' ? (
         <>—</>
@@ -76,7 +95,8 @@ const columns: TableColumn<AgentRow>[] = [
         />
       ),
   },
-  { title: 'Last active', field: 'lastActive' },
+  { title: 'Last active', field: 'lastActive', hidden: true },
+  { title: 'Last observed', field: 'lastObservedAt', hidden: true },
   {
     title: 'Requests',
     field: 'requests',
@@ -123,7 +143,12 @@ export const FleetPage = () => {
         {rows && (
           <Table<AgentRow>
             title={`Fleet (${rows.length})`}
-            options={{ search: true, paging: false, padding: 'dense' }}
+            options={{
+              search: true,
+              paging: false,
+              padding: 'dense',
+              columnsButton: true,
+            }}
             columns={columns}
             data={rows}
           />
