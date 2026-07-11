@@ -8,6 +8,15 @@ changes.
 
 ## [Unreleased]
 
+### Security
+
+- **Dependency advisory.** Pinned `prismjs` to `^1.30.0` via a workspace
+  resolution to clear GHSA-x7hr-w5r2-h6wg (DOM clobbering) in the transitive
+  dev/build tree (pulled in as `~1.27.0` via `refractor`); a
+  backward-compatible minor bump. The resolution affects this repo's install
+  tree only — it is not part of the published packages, so consumers are
+  unaffected either way.
+
 ## [0.3.0] - 2026-07-11
 
 Observation-lifecycle release: the catalog now tells you not just what agents

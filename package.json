@@ -18,6 +18,9 @@
       "plugins/*"
     ]
   },
+  "resolutions": {
+    "prismjs": "^1.30.0"
+  },
   "scripts": {
     "tsc": "tsc",
     "build": "backstage-cli repo build --all",
