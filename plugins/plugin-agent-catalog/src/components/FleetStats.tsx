@@ -4,6 +4,7 @@
  * and toggle the fleet's active filter.
  */
 
+import { Typography } from '@material-ui/core';
 import { GhostIcon } from './GhostIcon';
 import { TILES, type FleetStats, type FilterTone } from './fleetView';
 
@@ -34,17 +35,19 @@ export const FleetStatsBar = ({
       const value = stats[tile.stat];
       const clickable = !!tile.filter && value > 0;
       const active = activeId === tile.id;
-      const color = tile.tone ? TONE_COLOR[tile.tone] : undefined;
+      // Tone the number only when there's something to see; a "0" shouldn't
+      // read as an alert. All tiles stay fully legible regardless.
+      const color = tile.tone && value > 0 ? TONE_COLOR[tile.tone] : undefined;
       return (
         <button
           key={tile.id}
           type="button"
-          disabled={!clickable}
           aria-pressed={active}
           onClick={() => clickable && onToggle(tile.id)}
           style={{
             textAlign: 'left',
             font: 'inherit',
+            color: 'inherit',
             padding: '10px 14px',
             borderRadius: 8,
             border: active
@@ -52,13 +55,19 @@ export const FleetStatsBar = ({
               : '1px solid transparent',
             background: 'rgba(128,128,128,0.10)',
             cursor: clickable ? 'pointer' : 'default',
-            opacity: !tile.filter || value > 0 ? 1 : 0.55,
           }}
         >
-          <div style={{ fontSize: 13, opacity: 0.75, marginBottom: 2 }}>
+          <Typography
+            variant="caption"
+            color="textSecondary"
+            component="div"
+            style={{ marginBottom: 2 }}
+          >
             {tile.ghost && <GhostIcon />} {tile.label}
-          </div>
-          <div style={{ fontSize: 24, fontWeight: 500, color }}>{value}</div>
+          </Typography>
+          <Typography variant="h5" component="div" style={{ fontWeight: 500, color }}>
+            {value}
+          </Typography>
         </button>
       );
     })}
