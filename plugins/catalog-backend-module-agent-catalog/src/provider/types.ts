@@ -192,6 +192,26 @@ export interface A2ADiscoveryConfig {
   claimedBy: ClaimedByRef[];
 }
 
+/**
+ * Audit sweep (ADR 0007): probe *unlabeled* Services for an agent card —
+ * "what's running that nobody registered". Off by default; an operator opt-in.
+ * Reuses `a2aDiscovery.claimedBy` (a Service owned by a runtime CR is that
+ * provider's job) and `excludeNamespaces`.
+ */
+export interface SweepConfig {
+  /** Off by default — the sweep is a supervised platform-team audit tool. */
+  enabled: boolean;
+  /** Namespaces to skip, on top of `excludeNamespaces` (system ns are excluded). */
+  namespaceDenylist: string[];
+  /** Max declared ports probed per Service (ADR 0007: minimal, attributable). */
+  maxPorts: number;
+  /**
+   * Recurring cadence in minutes. Unset => no recurring schedule: one supervised
+   * sweep runs shortly after enable, then only on operator trigger/restart.
+   */
+  scheduleMinutes?: number;
+}
+
 /** Minimal Service shape the discovery provider consumes (defensive). */
 export interface DiscoveredService {
   metadata?: KubeObjectMeta & {
@@ -221,6 +241,8 @@ export interface AgentCatalogConfig {
   cardEnrichment: CardEnrichmentConfig;
   /** Runtime-agnostic labeled-Service discovery (ADR 0006). */
   a2aDiscovery: A2ADiscoveryConfig;
+  /** Audit sweep: probe unlabeled Services for cards (ADR 0007). Off by default. */
+  sweep: SweepConfig;
   /** Traction from the LLM-gateway ledger (ADR 0008). */
   usage: UsageConfig;
   /** Heuristic discovery of LLM-consuming workloads (ADR 0009). */

@@ -64,6 +64,7 @@ function baseConfig(
       envNamePatterns: ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY'],
       imagePatterns: [],
     },
+    sweep: { enabled: false, namespaceDenylist: [], maxPorts: 3 },
     ark: { enabled: true, group: 'ark.mckinsey.com', version: 'v1alpha1' },
     ...overrides,
   };

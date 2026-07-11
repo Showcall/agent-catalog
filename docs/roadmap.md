@@ -47,7 +47,7 @@ rest.
 | 3 | Non-kagent discovery: **Tier A ✅** ([ADR 0006](adr/0006-a2a-label-discovery.md)) · **Tier B: ARK ✅** ([ADR 0010](adr/0010-ark-and-provider-base.md)), Dapr ⬜ · Tier C ⬜ | 🟨 in progress |
 | — | **LLM-gateway usage integration** (traction vs. noise + discovery by consumption) — [ADR 0008](adr/0008-gateway-usage.md) | ✅ done |
 | — | **Heuristic discovery** of LLM-consuming workloads — [ADR 0009](adr/0009-heuristic-discovery.md) | ✅ done |
-| — | **Audit sweep**: probe unlabeled Services for cards. Designed in [ADR 0007](adr/0007-audit-sweep.md): entities directly (`discovery: probe`), trigger-first, off by default. Folds into heuristic discovery as one signal among several | ⬜ (design done) |
+| — | **Audit sweep**: probe unlabeled Services for cards. [ADR 0007](adr/0007-audit-sweep.md): entities directly (`discovery: probe`), trigger-first, off by default. `SweepDiscoveryProvider` — the Tier B scout also finds card-serving agents on runtimes with no CRD provider yet | ✅ done |
 | — | **Frontend v1**: `/agents` fleet page + Agent entity card (traction, status chips) | ✅ done |
 | — | **Headless / standalone inventory mode**: same collectors and normalized model, usable without Backstage for orgs whose agent runtimes and gateways live in separate clusters | 💡 future |
 | — | **Observation lifecycle v0**: last observed time and explicit source availability during cluster outages | ✅ done |
