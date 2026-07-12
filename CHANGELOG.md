@@ -8,7 +8,11 @@ changes.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-07-12
+
 ### Added
+
+
 
 - **Backend findings and snapshot API (ADR 0011).** Agent state is now
   projected into typed `AgentSnapshot` values and served from the backend,
