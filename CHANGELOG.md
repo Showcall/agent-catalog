@@ -8,6 +8,19 @@ changes.
 
 ## [Unreleased]
 
+### Added
+
+- **Backend findings and snapshot API (ADR 0011).** Agent state is now
+  projected into typed `AgentSnapshot` values and served from the backend,
+  alongside prioritized findings for unreachable, stale, drifting, unowned,
+  heuristic, idle, and unattributed-usage conditions. The fleet page and
+  per-agent Agent card consume this neutral API instead of deriving state from
+  catalog annotations in the browser.
+- **Backend package rename and expanded role.** The backend package is now
+  `@showcall/backstage-plugin-agent-catalog-backend`; it continues to ingest
+  catalog entities and now also exposes the agent-catalog HTTP plugin used by
+  the fleet UI and external integrations.
+
 ## [0.4.0] - 2026-07-11
 
 ### Added
