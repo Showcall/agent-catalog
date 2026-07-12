@@ -48,6 +48,11 @@ AGENTS.local.md
 docs/superpowers/
 outputs/
 
+# The Changesets release-PR action expects package-local changelogs, but this
+# repository intentionally keeps the canonical changelog at the root. The
+# version script creates these as ignored CI compatibility files.
+plugins/*/CHANGELOG.md
+
 # Editor / OS
 .DS_Store
 Thumbs.db
