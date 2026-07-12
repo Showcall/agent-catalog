@@ -2,7 +2,7 @@
 
 Releases publish both packages to npm:
 
-- `@showcall/backstage-plugin-catalog-backend-module-agent-catalog`
+- `@showcall/backstage-plugin-agent-catalog-backend`
 - `@showcall/backstage-plugin-agent-catalog`
 
 Publishing uses **npm Trusted Publishing (OIDC)** from
@@ -27,7 +27,7 @@ yet, so each package's *first* publish is manual. You only do this once.
    ```
 3. Publish each package once, from its directory:
    ```bash
-   ( cd plugins/catalog-backend-module-agent-catalog && npm publish --access public )
+   ( cd plugins/plugin-agent-catalog-backend && npm publish --access public )
    ( cd plugins/plugin-agent-catalog && npm publish --access public )
    ```
    (Provenance isn't produced for a manual local publish — that's expected;

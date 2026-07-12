@@ -39,7 +39,7 @@ upsertDependency(
 );
 upsertDependency(
   path.join(appDir, 'packages/backend/package.json'),
-  '@showcall/backstage-plugin-catalog-backend-module-agent-catalog',
+  '@showcall/backstage-plugin-agent-catalog-backend',
 );
 
 const appEntry = path.join(appDir, 'packages/app/src/App.tsx');
@@ -66,20 +66,37 @@ fs.writeFileSync(appEntry, appSource);
 
 const backendIndex = path.join(appDir, 'packages/backend/src/index.ts');
 let backendSource = fs.readFileSync(backendIndex, 'utf8');
-const moduleImport = "backend.add(import('@showcall/backstage-plugin-catalog-backend-module-agent-catalog'));";
-if (!backendSource.includes(moduleImport)) {
-  const insertion = [
-    '// agent-catalog demo: ingest kagent, ARK, A2A, heuristic, and gateway usage entities',
-    moduleImport,
-    '',
-  ].join('\n');
+
+// The plugin is a named export (the default export is the catalog module), so
+// it needs a top-level import in addition to the backend.add() call.
+const pluginNamedImport =
+  "import { agentCatalogPlugin } from '@showcall/backstage-plugin-agent-catalog-backend';";
+if (!backendSource.includes(pluginNamedImport)) {
+  backendSource = `${pluginNamedImport}\n${backendSource}`;
+}
+
+// Insert a backend.add(...) line before the permission plugin / backend.start(),
+// idempotently — each registration is guarded independently so re-patching an
+// already-wired app still adds a newly-introduced one.
+function addBackendFeature(comment, addLine) {
+  if (backendSource.includes(addLine)) return;
+  const insertion = `${comment}\n${addLine}\n\n`;
   if (backendSource.includes('// permission plugin')) {
     backendSource = backendSource.replace('// permission plugin', `${insertion}// permission plugin`);
   } else {
     backendSource = backendSource.replace('backend.start();', `${insertion}backend.start();`);
   }
-  fs.writeFileSync(backendIndex, backendSource);
 }
+
+addBackendFeature(
+  '// agent-catalog demo: ingest kagent, ARK, A2A, heuristic, and gateway usage entities',
+  "backend.add(import('@showcall/backstage-plugin-agent-catalog-backend'));",
+);
+addBackendFeature(
+  '// agent-catalog demo: serve /api/agent-catalog/* (snapshots + findings)',
+  'backend.add(agentCatalogPlugin);',
+);
+fs.writeFileSync(backendIndex, backendSource);
 
 const orgPath = path.join(rootDir, 'demo/backstage/org.yaml');
 

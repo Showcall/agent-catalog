@@ -82,7 +82,7 @@ relevant ADR or add a new one.
 
 | Area                                | Location                                                     |
 | ----------------------------------- | ------------------------------------------------------------ |
-| Backend discovery and transforms    | `plugins/catalog-backend-module-agent-catalog/src/provider/` |
+| Backend discovery and transforms    | `plugins/plugin-agent-catalog-backend/src/provider/` |
 | Frontend fleet page and entity card | `plugins/plugin-agent-catalog/src/components/`               |
 | Demo manifests and runtime packs    | `demo/`                                                      |
 | Kubernetes read-only permissions    | `deploy/rbac.yaml`                                           |

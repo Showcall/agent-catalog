@@ -33,7 +33,7 @@ fi
 
 echo "Syncing local Agent Catalog plugins into the disposable app..."
 mkdir -p "$APP_DIR/plugins"
-for plugin in catalog-backend-module-agent-catalog plugin-agent-catalog; do
+for plugin in plugin-agent-catalog-backend plugin-agent-catalog; do
   rm -rf "$APP_DIR/plugins/$plugin"
   cp -R "$ROOT_DIR/plugins/$plugin" "$APP_DIR/plugins/$plugin"
 done

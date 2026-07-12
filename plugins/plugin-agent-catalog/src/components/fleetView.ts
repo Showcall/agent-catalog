@@ -1,14 +1,18 @@
 /**
- * Pure helpers for the fleet view's summary tiles and click-to-filter — kept
- * out of the component so the counting and predicates are unit-testable.
+ * Pure helpers for the fleet view's summary tiles and click-to-filter, over
+ * the neutral `AgentSnapshot` the backend serves. These are view-interaction
+ * concerns (which tiles filter to what); the heavier triage derivation
+ * (findings + severity) lives server-side in the core (ADR 0011).
  */
 
-import type { AgentRow } from './rows';
+import type { AgentSnapshot } from '@showcall/backstage-plugin-agent-catalog-backend';
 
-/** Owner unresolved: unset, or the catch-all "unknown"/"unowned" placeholder. */
-export function isUnownedRow(row: AgentRow): boolean {
-  const owner = row.owner;
-  if (!owner || owner === '—') return true;
+/** Owner unresolved: unset, or the catch-all "unknown"/"unowned" placeholder.
+ * Mirrors the core's `isUnowned` (kept local to avoid a runtime import from the
+ * backend package into the browser bundle). */
+export function isUnowned(snap: AgentSnapshot): boolean {
+  const owner = snap.owner;
+  if (!owner || !owner.trim()) return true;
   return /(^|\/)(unknown|unowned)$/i.test(owner);
 }
 
@@ -20,25 +24,27 @@ export interface FleetStats {
   runtimes: number;
 }
 
-export function computeFleetStats(rows: AgentRow[]): FleetStats {
+export function computeFleetStats(agents: AgentSnapshot[]): FleetStats {
   return {
-    agents: rows.length,
-    shadow: rows.filter(r => r.discovery === 'probe').length,
-    unreachable: rows.filter(r => r.reachable === 'false').length,
-    unowned: rows.filter(isUnownedRow).length,
+    agents: agents.length,
+    shadow: agents.filter(a => a.discovery === 'probe').length,
+    unreachable: agents.filter(a => a.reachable === false).length,
+    unowned: agents.filter(isUnowned).length,
     runtimes: new Set(
-      rows.map(r => r.runtime).filter(rt => rt && rt !== 'unknown' && rt !== '—'),
+      agents
+        .map(a => a.runtime)
+        .filter((rt): rt is string => !!rt && rt !== 'unknown'),
     ).size,
   };
 }
 
 export type FilterTone = 'accent' | 'danger' | 'warning';
 
-/** A named filter over the fleet rows (a tile, or a health finding). */
+/** A named filter over the fleet (a tile, or a health finding). */
 export interface FleetFilter {
   id: string;
   label: string;
-  match: (row: AgentRow) => boolean;
+  match: (agent: AgentSnapshot) => boolean;
 }
 
 /**
@@ -50,7 +56,7 @@ export interface TileSpec {
   label: string;
   stat: keyof FleetStats;
   tone?: FilterTone;
-  filter?: (row: AgentRow) => boolean;
+  filter?: (agent: AgentSnapshot) => boolean;
   /** Show the small ghost mark (shadow tile). */
   ghost?: boolean;
 }
@@ -63,28 +69,28 @@ export const TILES: TileSpec[] = [
     stat: 'shadow',
     tone: 'accent',
     ghost: true,
-    filter: r => r.discovery === 'probe',
+    filter: a => a.discovery === 'probe',
   },
   {
     id: 'unreachable',
     label: 'Unreachable',
     stat: 'unreachable',
     tone: 'danger',
-    filter: r => r.reachable === 'false',
+    filter: a => a.reachable === false,
   },
   {
     id: 'unowned',
     label: 'Unowned',
     stat: 'unowned',
     tone: 'warning',
-    filter: isUnownedRow,
+    filter: isUnowned,
   },
   { id: 'runtimes', label: 'Runtimes', stat: 'runtimes' },
 ];
 
 export function filterRows(
-  rows: AgentRow[],
+  agents: AgentSnapshot[],
   filter: FleetFilter | undefined,
-): AgentRow[] {
-  return filter ? rows.filter(filter.match) : rows;
+): AgentSnapshot[] {
+  return filter ? agents.filter(filter.match) : agents;
 }

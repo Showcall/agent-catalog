@@ -4,13 +4,13 @@
  * does anyone use it".
  */
 
-import type { ReactNode } from 'react';
-import { InfoCard } from '@backstage/core-components';
+import { useEffect, useState, type ReactNode } from 'react';
+import { InfoCard, Progress } from '@backstage/core-components';
 import { useEntity } from '@backstage/plugin-catalog-react';
+import { stringifyEntityRef } from '@backstage/catalog-model';
 import { Chip, Grid, Typography } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
-
-const A = 'agentcatalog.io';
+import { useFleetApi, type AgentSnapshot } from '../api/fleetApi';
 
 const useStyles = makeStyles(theme => ({
   chips: {
@@ -44,95 +44,150 @@ const Stat = ({ label, value }: { label: string; value: ReactNode }) => (
 
 export const AgentInfoCard = () => {
   const { entity } = useEntity();
-  const classes = useStyles();
-  const ann = entity.metadata.annotations ?? {};
-  const agent =
-    (entity.spec as { agent?: Record<string, unknown> })?.agent ?? {};
+  const fleetApi = useFleetApi();
+  const [state, setState] = useState<
+    | { status: 'loading' }
+    | { status: 'ready'; snapshot: AgentSnapshot | undefined }
+    | { status: 'error'; error: Error }
+  >({ status: 'loading' });
 
-  const requests = ann[`${A}/usage-requests`];
-  const tokens = ann[`${A}/usage-tokens`];
-  const cost = ann[`${A}/usage-cost-usd`];
-  const window = ann[`${A}/usage-window`] ?? '';
-  const lastActive = ann[`${A}/last-active`];
-  const reachable = ann[`${A}/reachable`];
-  const sourceStatus = ann[`${A}/source-status`];
-  const lastObservedAt = ann[`${A}/last-observed-at`];
-  const sourceLastSuccessAt = ann[`${A}/source-last-success-at`];
-  const cardSource = ann[`${A}/card-source`];
-  const interfaceStatus = ann[`${A}/interface-status`];
-  const interfaceDrift = ann[`${A}/interface-drift`];
-  const discovery = ann[`${A}/discovery`];
-  const runtime = ann[`${A}/runtime`];
-  const cluster = ann[`${A}/cluster`];
-  const modelConfig = ann[`${A}/model-config`];
-  const image = ann[`${A}/image`];
-  const signals = ann[`${A}/heuristic-signals`];
-  const isHeuristic = discovery === 'heuristic';
+  useEffect(() => {
+    let mounted = true;
+    setState({ status: 'loading' });
+    fleetApi
+      .getAgents()
+      .then(agents => {
+        if (!mounted) return;
+        const ref = stringifyEntityRef(entity);
+        setState({
+          status: 'ready',
+          snapshot: agents.find(agent => agent.ref === ref),
+        });
+      })
+      .catch((error: unknown) => {
+        if (!mounted) return;
+        setState({
+          status: 'error',
+          error: error instanceof Error ? error : new Error(String(error)),
+        });
+      });
+
+    return () => {
+      mounted = false;
+    };
+    // useFleetApi returns request functions rather than a stable object.
+    // Fetch once for the entity card and avoid restarting on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entity]);
+
+  if (state.status === 'loading') {
+    return (
+      <InfoCard title="Agent">
+        <Progress />
+      </InfoCard>
+    );
+  }
+
+  if (state.status === 'error') {
+    return (
+      <InfoCard title="Agent">
+        <Typography variant="body2" color="textSecondary">
+          Agent status is temporarily unavailable. {state.error.message}
+        </Typography>
+      </InfoCard>
+    );
+  }
+
+  if (!state.snapshot) {
+    return (
+      <InfoCard title="Agent">
+        <Typography variant="body2" color="textSecondary">
+          No current agent snapshot is available for this catalog entity.
+        </Typography>
+      </InfoCard>
+    );
+  }
+
+  return <AgentInfoCardView snapshot={state.snapshot} />;
+};
+
+export function AgentInfoCardView({ snapshot }: { snapshot: AgentSnapshot }) {
+  const classes = useStyles();
+  const isHeuristic = snapshot.kind === 'workload';
+  const requests = snapshot.usage.requests;
+  const window = snapshot.usage.window;
 
   return (
     <InfoCard
       title={isHeuristic ? 'LLM workload (heuristic finding)' : 'Agent'}
-      subheader={isHeuristic ? undefined : `runtime: ${runtime ?? 'unknown'}`}
+      subheader={
+        isHeuristic ? undefined : `runtime: ${snapshot.runtime ?? 'unknown'}`
+      }
     >
       <Grid container spacing={2}>
         <Grid item xs={12}>
           <div className={classes.chips}>
-            {cluster && (
+            {snapshot.cluster && (
               <Chip
                 size="small"
                 variant="outlined"
-                label={`cluster: ${cluster}`}
+                label={`cluster: ${snapshot.cluster}`}
               />
             )}
-            {discovery && (
+            {snapshot.discovery && (
               <Chip
                 size="small"
                 variant="outlined"
-                label={`discovery: ${discovery}`}
+                label={`discovery: ${snapshot.discovery}`}
               />
             )}
-            {reachable && (
+            {snapshot.reachable !== null && (
               <Chip
                 size="small"
-                label={reachable === 'true' ? 'reachable' : 'unreachable'}
+                label={snapshot.reachable ? 'reachable' : 'unreachable'}
                 style={{
-                  backgroundColor:
-                    reachable === 'true' ? '#1db95433' : '#e5484d33',
+                  backgroundColor: snapshot.reachable
+                    ? '#1db95433'
+                    : '#e5484d33',
                 }}
               />
             )}
-            {sourceStatus && (
+            {snapshot.sourceStatus && (
               <Chip
                 size="small"
                 label={
-                  sourceStatus === 'available'
+                  snapshot.sourceStatus === 'available'
                     ? 'source: online'
                     : 'source: offline'
                 }
                 style={{
                   backgroundColor:
-                    sourceStatus === 'available' ? '#1db95433' : '#e5484d33',
+                    snapshot.sourceStatus === 'available'
+                      ? '#1db95433'
+                      : '#e5484d33',
                 }}
               />
             )}
-            {cardSource && (
+            {snapshot.cardSource && (
               <Chip
                 size="small"
                 variant="outlined"
-                label={`card: ${cardSource}`}
+                label={`card: ${snapshot.cardSource}`}
               />
             )}
-            {interfaceStatus && (
+            {snapshot.interfaceStatus && (
               <Chip
                 size="small"
                 label={
-                  interfaceStatus === 'in-sync'
+                  snapshot.interfaceStatus === 'in-sync'
                     ? 'interface: in sync'
                     : 'interface: drift'
                 }
                 style={{
                   backgroundColor:
-                    interfaceStatus === 'in-sync' ? '#1db95433' : '#f5a52433',
+                    snapshot.interfaceStatus === 'in-sync'
+                      ? '#1db95433'
+                      : '#f5a52433',
                 }}
               />
             )}
@@ -141,14 +196,22 @@ export const AgentInfoCard = () => {
 
         <Stat
           label={`Requests${window ? ` / ${window}` : ''}`}
-          value={requests ?? '—'}
+          value={requests === null ? '—' : requests}
         />
-        <Stat label="Tokens" value={tokens ?? '—'} />
-        <Stat label="Last active" value={lastActive ?? '—'} />
-        <Stat label="Last observed" value={lastObservedAt ?? '—'} />
-        {cost && <Stat label={`Cost / ${window}`} value={`$${cost}`} />}
+        <Stat
+          label="Tokens"
+          value={snapshot.usage.tokens === null ? '—' : snapshot.usage.tokens}
+        />
+        <Stat label="Last active" value={snapshot.lastActive ?? '—'} />
+        <Stat label="Last observed" value={snapshot.lastObservedAt ?? '—'} />
+        {snapshot.usage.costUsd !== null && (
+          <Stat
+            label={`Cost / ${window ?? ''}`}
+            value={`$${snapshot.usage.costUsd}`}
+          />
+        )}
 
-        {sourceStatus === 'unavailable' && (
+        {snapshot.sourceStatus === 'unavailable' && (
           <Grid item xs={12}>
             <Typography
               variant="body2"
@@ -156,25 +219,26 @@ export const AgentInfoCard = () => {
               className={classes.detail}
             >
               Source is currently unavailable. Last successful observation:{' '}
-              <code>{sourceLastSuccessAt ?? 'unknown'}</code>.
+              <code>{snapshot.sourceLastSuccessAt ?? 'unknown'}</code>.
             </Typography>
           </Grid>
         )}
 
-        {signals && (
+        {snapshot.heuristicSignals && (
           <Grid item xs={12}>
             <Typography
               variant="body2"
               color="textSecondary"
               className={classes.detail}
             >
-              Flagged because: <code>{signals}</code>. If this is a real agent,
-              label its Service <code>agentcatalog.io/a2a: "true"</code>; if
-              it's a false positive, label it <code>"false"</code>.
+              Flagged because: <code>{snapshot.heuristicSignals}</code>. If this
+              is a real agent, label its Service{' '}
+              <code>agentcatalog.io/a2a: "true"</code>; if it's a false
+              positive, label it <code>"false"</code>.
             </Typography>
           </Grid>
         )}
-        {interfaceDrift && (
+        {snapshot.interfaceDrift && (
           <Grid item xs={12}>
             <Typography
               variant="body2"
@@ -182,31 +246,31 @@ export const AgentInfoCard = () => {
               className={classes.detail}
             >
               Declared interface differs from the live card:{' '}
-              <code>{interfaceDrift}</code>.
+              <code>{snapshot.interfaceDrift}</code>.
             </Typography>
           </Grid>
         )}
-        {(modelConfig || image) && (
+        {(snapshot.model || snapshot.image) && (
           <Grid item xs={12}>
             <Typography
               variant="body2"
               color="textSecondary"
               className={classes.detail}
             >
-              {modelConfig && (
+              {snapshot.model && (
                 <>
-                  model config: <code>{modelConfig}</code>{' '}
+                  model config: <code>{snapshot.model}</code>{' '}
                 </>
               )}
-              {image && (
+              {snapshot.image && (
                 <>
-                  image: <code>{image}</code>
+                  image: <code>{snapshot.image}</code>
                 </>
               )}
             </Typography>
           </Grid>
         )}
-        {requests === undefined && (
+        {requests === null && (
           <Grid item xs={12}>
             <Typography
               variant="body2"
@@ -216,8 +280,7 @@ export const AgentInfoCard = () => {
               No per-agent usage: this agent has no gateway key alias. Issue it
               a key aliased{' '}
               <code>
-                {String(agent.namespace ?? 'ns')}/
-                {entity.metadata.title ?? entity.metadata.name}
+                {String(snapshot.namespace ?? 'ns')}/{snapshot.name}
               </code>{' '}
               to light up traction.
             </Typography>
@@ -226,4 +289,4 @@ export const AgentInfoCard = () => {
       </Grid>
     </InfoCard>
   );
-};
+}

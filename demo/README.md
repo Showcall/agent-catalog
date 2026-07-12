@@ -92,7 +92,7 @@ with, any lower config layer).
 The full demo does not mutate your Backstage app. For real adoption, install
 these two local plugins into your app instead:
 
-- `plugins/catalog-backend-module-agent-catalog`
+- `plugins/plugin-agent-catalog-backend`
 - `plugins/plugin-agent-catalog`
 
 Then use `demo/backstage/app-config.demo.yaml` as a config overlay for your

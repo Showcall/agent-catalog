@@ -19,7 +19,7 @@ execFileSync('yarn', ['changeset', 'version'], {
 
 const packagePaths = [
   'plugins/plugin-agent-catalog/package.json',
-  'plugins/catalog-backend-module-agent-catalog/package.json',
+  'plugins/plugin-agent-catalog-backend/package.json',
 ];
 const versions = packagePaths.map(relativePath => {
   const packageJson = JSON.parse(

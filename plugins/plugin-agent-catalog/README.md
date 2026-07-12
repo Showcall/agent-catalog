@@ -31,7 +31,7 @@ yarn --cwd packages/app add @showcall/backstage-plugin-agent-catalog
 ```
 
 Most installations should also install the
-[backend module](https://www.npmjs.com/package/@showcall/backstage-plugin-catalog-backend-module-agent-catalog),
+[backend module](https://www.npmjs.com/package/@showcall/backstage-plugin-agent-catalog-backend),
 which discovers agents and writes them into the Backstage catalog.
 
 ## Register the plugin
@@ -70,7 +70,7 @@ The page and entity-card extensions still require the new frontend system.
 
 ## Related packages
 
-- [`@showcall/backstage-plugin-catalog-backend-module-agent-catalog`](https://www.npmjs.com/package/@showcall/backstage-plugin-catalog-backend-module-agent-catalog)
+- [`@showcall/backstage-plugin-agent-catalog-backend`](https://www.npmjs.com/package/@showcall/backstage-plugin-agent-catalog-backend)
   discovers agents, model configurations, A2A cards, heuristic workloads, and
   gateway usage.
 - [`@showcall/backstage-plugin-agent-catalog`](https://www.npmjs.com/package/@showcall/backstage-plugin-agent-catalog)

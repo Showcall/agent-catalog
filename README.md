@@ -100,12 +100,12 @@ too.
 
 ## Quick start (into an existing Backstage app)
 
-1. Copy `plugins/catalog-backend-module-agent-catalog` and
+1. Copy `plugins/plugin-agent-catalog-backend` and
    `plugins/plugin-agent-catalog` into your repo's `plugins/` and add them
    to the workspace.
 2. Wire the backend module into `packages/backend/src/index.ts`:
    ```ts
-   backend.add(import('@showcall/backstage-plugin-catalog-backend-module-agent-catalog'));
+   backend.add(import('@showcall/backstage-plugin-agent-catalog-backend'));
    ```
 3. Add the frontend plugin package to your app dependencies. With
    `app.packages: all`, Backstage's new frontend system discovers the
