@@ -32,14 +32,14 @@ const agentFleetPage = PageBlueprint.make({
     routeRef: agentsRouteRef,
     title: agentCatalogNavItem.title,
     icon: <AndroidIcon />,
-    loader: () =>
-      import('./components/FleetPage').then(m => <m.FleetPage />),
+    loader: () => import('./components/FleetPage').then(m => <m.FleetPage />),
   },
 });
 
 const agentInfoCard = EntityCardBlueprint.make({
   name: 'agent-info',
   params: {
+    type: 'info',
     filter: (entity: Entity) =>
       entity.kind === 'Component' &&
       ['ai-agent', 'ai-agent-team', 'llm-workload'].includes(
