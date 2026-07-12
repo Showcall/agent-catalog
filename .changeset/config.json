@@ -5,7 +5,7 @@
   "fixed": [
     [
       "@showcall/backstage-plugin-agent-catalog",
-      "@showcall/backstage-plugin-catalog-backend-module-agent-catalog"
+      "@showcall/backstage-plugin-agent-catalog-backend"
     ]
   ],
   "linked": [],

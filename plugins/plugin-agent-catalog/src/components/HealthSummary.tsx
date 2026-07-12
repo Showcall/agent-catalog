@@ -1,11 +1,11 @@
 /**
  * "Needs attention" panel above the fleet table. Renders the prioritized
- * findings from `computeHealth` — pure presentation, no data fetching.
+ * findings the backend derived (ADR 0011) — pure presentation, no derivation.
  *
- * Collapsible, and each entity-backed finding is clickable: selecting it asks
+ * Collapsible, and each agent-backed finding is clickable: selecting it asks
  * the fleet to filter down to exactly the affected agents. Findings with no
- * catalog entities (e.g. unattributed gateway aliases) are shown but not
- * clickable — there is no row to filter to.
+ * agents (e.g. unattributed gateway aliases) are shown but not clickable —
+ * there is no row to filter to.
  */
 
 import { useState } from 'react';
@@ -14,7 +14,7 @@ import { EntityRefLink } from '@backstage/plugin-catalog-react';
 import { Chip, Grid, IconButton, Typography } from '@material-ui/core';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import ExpandLess from '@material-ui/icons/ExpandLess';
-import type { HealthFinding, HealthSeverity } from './health';
+import type { Finding, HealthSeverity } from '../api/fleetApi';
 
 const SEVERITY_COLOR: Record<HealthSeverity, string> = {
   critical: '#e5484d',
@@ -44,17 +44,17 @@ const FindingRow = ({
   active,
   onSelect,
 }: {
-  finding: HealthFinding;
+  finding: Finding;
   active: boolean;
-  onSelect?: (f: HealthFinding) => void;
+  onSelect?: (f: Finding) => void;
 }) => {
-  const inlineEntities = finding.entities.slice(0, MAX_INLINE);
+  const inlineRefs = finding.agentRefs.slice(0, MAX_INLINE);
   const inlineSubjects = finding.subjects.slice(
     0,
-    Math.max(0, MAX_INLINE - inlineEntities.length),
+    Math.max(0, MAX_INLINE - inlineRefs.length),
   );
-  const overflow = finding.count - (inlineEntities.length + inlineSubjects.length);
-  const selectable = !!onSelect && finding.entities.length > 0;
+  const overflow = finding.count - (inlineRefs.length + inlineSubjects.length);
+  const selectable = !!onSelect && finding.agentRefs.length > 0;
 
   const header = (
     <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -100,9 +100,9 @@ const FindingRow = ({
         {finding.detail}
       </Typography>
       <div style={{ marginLeft: 16 }}>
-        {inlineEntities.map((entity, i) => (
+        {inlineRefs.map((ref, i) => (
           <span key={`e-${i}`} style={{ marginRight: 8 }}>
-            <EntityRefLink entityRef={entity} />
+            <EntityRefLink entityRef={ref} />
           </span>
         ))}
         {inlineSubjects.map((subject, i) => (
@@ -130,10 +130,10 @@ export const HealthSummary = ({
   activeFindingId,
   onSelectFinding,
 }: {
-  findings: HealthFinding[];
+  findings: Finding[];
   total: number;
   activeFindingId?: string;
-  onSelectFinding?: (f: HealthFinding) => void;
+  onSelectFinding?: (f: Finding) => void;
 }) => {
   const [open, setOpen] = useState(true);
 

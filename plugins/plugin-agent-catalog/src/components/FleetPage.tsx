@@ -2,9 +2,10 @@
  * The fleet view: every AI agent across all sources, one table.
  * "It's 10 PM. Do you know where your agents are?"
  *
- * Leads with summary tiles and a collapsible "Needs attention" panel; both are
- * click-to-filter over the table below. All current-state, read-only — filtering
- * the live view, not saved views or dashboards.
+ * Pure view over the backend's neutral snapshots + findings (Fork B, ADR 0011):
+ * it fetches, formats, and filters — it does not derive. Leads with summary
+ * tiles and a collapsible "Needs attention" panel; both are click-to-filter
+ * over the table below.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -17,8 +18,7 @@ import {
   Table,
   TableColumn,
 } from '@backstage/core-components';
-import { useApi } from '@backstage/core-plugin-api';
-import { catalogApiRef, EntityRefLink } from '@backstage/plugin-catalog-react';
+import { EntityRefLink } from '@backstage/plugin-catalog-react';
 import {
   Button,
   Checkbox,
@@ -29,8 +29,7 @@ import {
   MenuItem,
 } from '@material-ui/core';
 import ViewColumn from '@material-ui/icons/ViewColumn';
-import { toRow, type AgentRow } from './rows';
-import { computeHealth, type HealthFinding } from './health';
+import { useFleetApi, type AgentSnapshot, type Finding } from '../api/fleetApi';
 import { HealthSummary } from './HealthSummary';
 import { FleetStatsBar } from './FleetStats';
 import { GhostIcon } from './GhostIcon';
@@ -41,6 +40,9 @@ import {
   type FleetFilter,
 } from './fleetView';
 
+const DASH = '—';
+const dash = (v: string | null) => v ?? DASH;
+
 const statusChip = (good: boolean, label: string) => (
   <Chip
     label={label}
@@ -49,14 +51,14 @@ const statusChip = (good: boolean, label: string) => (
   />
 );
 
-const ALL_COLUMNS: TableColumn<AgentRow>[] = [
+const ALL_COLUMNS: TableColumn<AgentSnapshot>[] = [
   {
     title: 'Agent',
     field: 'name',
     highlight: true,
     render: row => (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-        <EntityRefLink entityRef={row.entity} title={row.name} />
+        <EntityRefLink entityRef={row.ref} title={row.name} />
         {row.discovery === 'probe' && (
           <span
             title="Found by the sweep — nobody registered it"
@@ -68,40 +70,44 @@ const ALL_COLUMNS: TableColumn<AgentRow>[] = [
       </span>
     ),
   },
-  { title: 'Owner', field: 'owner' },
+  { title: 'Owner', field: 'owner', render: row => <>{dash(row.owner)}</> },
   {
     title: 'Cluster',
     field: 'cluster',
     render: row =>
-      row.cluster === '—' ? (
-        <>—</>
-      ) : (
+      row.cluster ? (
         <Chip label={row.cluster} size="small" variant="outlined" />
+      ) : (
+        <>{DASH}</>
       ),
   },
-  { title: 'Runtime', field: 'runtime' },
+  { title: 'Runtime', field: 'runtime', render: row => <>{dash(row.runtime)}</> },
   {
     title: 'Discovery',
     field: 'discovery',
     render: row => <Chip label={row.discovery} size="small" variant="outlined" />,
   },
-  { title: 'Lifecycle', field: 'lifecycle' },
+  {
+    title: 'Lifecycle',
+    field: 'lifecycle',
+    render: row => <>{dash(row.lifecycle)}</>,
+  },
   {
     title: 'Reachable',
     field: 'reachable',
     render: row =>
-      row.reachable === '—' ? (
-        <>—</>
+      row.reachable === null ? (
+        <>{DASH}</>
       ) : (
-        statusChip(row.reachable === 'true', row.reachable === 'true' ? 'yes' : 'no')
+        statusChip(row.reachable, row.reachable ? 'yes' : 'no')
       ),
   },
   {
     title: 'Source',
     field: 'sourceStatus',
     render: row =>
-      row.sourceStatus === '—' ? (
-        <>—</>
+      row.sourceStatus === null ? (
+        <>{DASH}</>
       ) : (
         statusChip(
           row.sourceStatus === 'available',
@@ -113,8 +119,8 @@ const ALL_COLUMNS: TableColumn<AgentRow>[] = [
     title: 'Interface',
     field: 'interfaceStatus',
     render: row =>
-      row.interfaceStatus === '—' ? (
-        <>—</>
+      row.interfaceStatus === null ? (
+        <>{DASH}</>
       ) : (
         <Chip
           label={row.interfaceStatus === 'in-sync' ? 'in sync' : 'drift'}
@@ -126,17 +132,21 @@ const ALL_COLUMNS: TableColumn<AgentRow>[] = [
         />
       ),
   },
-  { title: 'Last active', field: 'lastActive' },
-  { title: 'Last observed', field: 'lastObservedAt' },
+  { title: 'Last active', field: 'lastActive', render: row => <>{dash(row.lastActive)}</> },
+  {
+    title: 'Last observed',
+    field: 'lastObservedAt',
+    render: row => <>{dash(row.lastObservedAt)}</>,
+  },
   {
     title: 'Requests',
-    field: 'requests',
+    field: 'usage.requests',
     type: 'numeric',
     render: row =>
-      row.requests !== undefined ? (
+      row.usage.requests !== null ? (
         <>
-          {row.requests}
-          <span style={{ opacity: 0.6 }}> /{row.window}</span>
+          {row.usage.requests}
+          <span style={{ opacity: 0.6 }}> /{row.usage.window ?? ''}</span>
         </>
       ) : (
         <span style={{ opacity: 0.6 }}>no key alias</span>
@@ -149,37 +159,29 @@ const DEFAULT_HIDDEN = ['discovery', 'interfaceStatus', 'lastActive', 'lastObser
 type Active = { kind: 'tile' | 'find'; filter: FleetFilter } | undefined;
 
 export const FleetPage = () => {
-  const catalogApi = useApi(catalogApiRef);
-  const [rows, setRows] = useState<AgentRow[] | undefined>();
-  const [findings, setFindings] = useState<HealthFinding[]>([]);
+  const fleetApi = useFleetApi();
+  const [agents, setAgents] = useState<AgentSnapshot[] | undefined>();
+  const [findings, setFindings] = useState<Finding[]>([]);
   const [error, setError] = useState<Error | undefined>();
   const [active, setActive] = useState<Active>();
   const [hidden, setHidden] = useState<Set<string>>(new Set(DEFAULT_HIDDEN));
   const [colAnchor, setColAnchor] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    Promise.all([
-      catalogApi.getEntities({
-        filter: {
-          kind: 'Component',
-          'spec.type': ['ai-agent', 'ai-agent-team', 'llm-workload'],
-        },
-      }),
-      catalogApi.getEntities({
-        filter: { kind: 'Resource', 'spec.type': 'llm-gateway' },
-      }),
-    ])
-      .then(([agentRes, gatewayRes]) => {
-        setRows(agentRes.items.map(toRow));
-        setFindings(computeHealth(agentRes.items, gatewayRes.items));
+    Promise.all([fleetApi.getAgents(), fleetApi.getFindings()])
+      .then(([a, f]) => {
+        setAgents(a);
+        setFindings(f);
       })
       .catch(setError);
-  }, [catalogApi]);
+    // fleetApi is derived from stable apis; fetch once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const stats = useMemo(() => computeFleetStats(rows ?? []), [rows]);
+  const stats = useMemo(() => computeFleetStats(agents ?? []), [agents]);
   const visibleRows = useMemo(
-    () => filterRows(rows ?? [], active?.filter),
-    [rows, active],
+    () => filterRows(agents ?? [], active?.filter),
+    [agents, active],
   );
   const columns = useMemo(
     () => ALL_COLUMNS.filter(c => !hidden.has(c.field as string)),
@@ -193,18 +195,25 @@ export const FleetPage = () => {
     }
     const tile = TILES.find(t => t.id === tileId);
     if (tile?.filter) {
-      setActive({ kind: 'tile', filter: { id: tile.id, label: tile.label, match: tile.filter } });
+      setActive({
+        kind: 'tile',
+        filter: { id: tile.id, label: tile.label, match: tile.filter },
+      });
     }
   };
 
-  const selectFinding = (f: HealthFinding) => {
+  const selectFinding = (f: Finding) => {
     if (active?.kind === 'find' && active.filter.id === f.id) {
       setActive(undefined);
       return;
     }
     setActive({
       kind: 'find',
-      filter: { id: f.id, label: f.title, match: row => f.entities.includes(row.entity) },
+      filter: {
+        id: f.id,
+        label: f.title,
+        match: agent => f.agentRefs.includes(agent.ref),
+      },
     });
   };
 
@@ -224,8 +233,8 @@ export const FleetPage = () => {
       />
       <Content>
         {error && <ResponseErrorPanel error={error} />}
-        {!rows && !error && <Progress />}
-        {rows && (
+        {!agents && !error && <Progress />}
+        {agents && (
           <>
             <FleetStatsBar
               stats={stats}
@@ -235,7 +244,7 @@ export const FleetPage = () => {
             <div style={{ marginBottom: 16 }}>
               <HealthSummary
                 findings={findings}
-                total={rows.length}
+                total={agents.length}
                 activeFindingId={active?.kind === 'find' ? active.filter.id : undefined}
                 onSelectFinding={selectFinding}
               />
@@ -291,15 +300,15 @@ export const FleetPage = () => {
               </span>
             </div>
 
-            <Table<AgentRow>
+            <Table<AgentSnapshot>
               title={`Fleet (${visibleRows.length}${
-                active ? ` of ${rows.length}` : ''
+                active ? ` of ${agents.length}` : ''
               })`}
               options={{
                 search: true,
                 paging: false,
                 padding: 'dense',
-                rowStyle: (row: AgentRow) =>
+                rowStyle: (row: AgentSnapshot) =>
                   row.discovery === 'probe'
                     ? { backgroundColor: 'rgba(127,119,221,0.06)' }
                     : {},

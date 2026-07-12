@@ -1,4 +1,4 @@
-# @showcall/backstage-plugin-catalog-backend-module-agent-catalog
+# @showcall/backstage-plugin-agent-catalog-backend
 
 > _It's 10 PM. Do you know where your agents are?_
 
@@ -24,14 +24,14 @@ configuration may change before `1.0`.
 From the root of your Backstage app:
 
 ```bash
-yarn --cwd packages/backend add @showcall/backstage-plugin-catalog-backend-module-agent-catalog
+yarn --cwd packages/backend add @showcall/backstage-plugin-agent-catalog-backend
 ```
 
 Register the module in `packages/backend/src/index.ts`:
 
 ```ts
 backend.add(
-  import('@showcall/backstage-plugin-catalog-backend-module-agent-catalog'),
+  import('@showcall/backstage-plugin-agent-catalog-backend'),
 );
 ```
 
@@ -102,7 +102,7 @@ will still be ordinary Backstage catalog entities.
 
 ## Related packages
 
-- [`@showcall/backstage-plugin-catalog-backend-module-agent-catalog`](https://www.npmjs.com/package/@showcall/backstage-plugin-catalog-backend-module-agent-catalog)
+- [`@showcall/backstage-plugin-agent-catalog-backend`](https://www.npmjs.com/package/@showcall/backstage-plugin-agent-catalog-backend)
   provides this discovery module.
 - [`@showcall/backstage-plugin-agent-catalog`](https://www.npmjs.com/package/@showcall/backstage-plugin-agent-catalog)
   provides the fleet and entity UI.

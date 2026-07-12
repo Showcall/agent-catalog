@@ -130,7 +130,7 @@ what was declared.
 
 First technical-preview release, published to npm as
 `@showcall/backstage-plugin-agent-catalog` and
-`@showcall/backstage-plugin-catalog-backend-module-agent-catalog`.
+`@showcall/backstage-plugin-agent-catalog-backend`.
 
 ### Added
 

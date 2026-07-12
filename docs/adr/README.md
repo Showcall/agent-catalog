@@ -17,3 +17,4 @@ ADR.
 | [0008](0008-gateway-usage.md) | Traction from the LLM-gateway ledger (LiteLLM first; team rollups + per-agent via alias) | accepted |
 | [0009](0009-heuristic-discovery.md) | Heuristic discovery of LLM-consuming workloads (`llm-workload`, evidence annotations) | accepted |
 | [0010](0010-ark-and-provider-base.md) | Tier B begins: ARK ingestion (Teams as `ai-agent-team` Components) + shared provider base | accepted |
+| [0011](0011-findings-and-provenance-in-the-backend.md) | Findings + scan provenance move server-side (plugin exported from the backend package; provenance as a catalog entity) | proposed |

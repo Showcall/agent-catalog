@@ -64,7 +64,7 @@ jobs:
       # Each step skips a version that is already on npm, so re-runs and tags
       # for already-published versions do not hard-fail.
       - name: Publish backend module
-        working-directory: plugins/catalog-backend-module-agent-catalog
+        working-directory: plugins/plugin-agent-catalog-backend
         run: |
           name=$(node -p "require('./package.json').name")
           ver=$(node -p "require('./package.json').version")
