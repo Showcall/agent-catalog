@@ -8,6 +8,8 @@ changes.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-11
+
 ### Added
 
 - **Fleet page polish + click-to-filter.** The `/agents` page leads with
