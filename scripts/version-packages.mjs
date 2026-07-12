@@ -58,3 +58,16 @@ const updated = changelog.replace(
   '## [Unreleased]\n\n' + releaseSection,
 );
 fs.writeFileSync(changelogPath, updated);
+
+// Changesets' release-PR action reads a CHANGELOG.md beside every changed
+// package while building the PR body, even when the repo's Changesets config
+// disables package changelogs. Keep the canonical content at the root and
+// create ignored compatibility files for that action only.
+for (const packageJsonPath of packagePaths) {
+  const packageChangelogPath = path.join(
+    root,
+    path.dirname(packageJsonPath),
+    'CHANGELOG.md',
+  );
+  fs.writeFileSync(packageChangelogPath, `# Changelog\n\n${releaseSection}`);
+}
